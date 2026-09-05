@@ -1,0 +1,1 @@
+-- Migration: Create profiles table

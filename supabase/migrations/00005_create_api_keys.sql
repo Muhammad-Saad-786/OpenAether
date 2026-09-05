@@ -1,0 +1,1 @@
+-- Migration: Create API keys table

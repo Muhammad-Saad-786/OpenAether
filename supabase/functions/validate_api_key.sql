@@ -1,0 +1,1 @@
+-- SQL API key validation function

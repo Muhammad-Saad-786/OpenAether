@@ -1,0 +1,1 @@
+-- SQL chat completion function

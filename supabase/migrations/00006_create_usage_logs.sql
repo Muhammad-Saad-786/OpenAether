@@ -1,0 +1,1 @@
+-- Migration: Create usage logs table

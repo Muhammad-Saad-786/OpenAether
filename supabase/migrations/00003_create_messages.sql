@@ -1,0 +1,1 @@
+-- Migration: Create messages table
