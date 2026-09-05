@@ -1,237 +1,119 @@
+# 🧠 OpenAether - Democratizing AI Access
+
 <div align="center">
 
-# ⚡ ZAZA STORE
+![OpenAether Logo](https://img.shields.io/badge/OpenAether-Free%20AI%20Platform-6c5ce7?style=for-the-badge)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/openaether/openaether/pulls)
+[![Contributors](https://img.shields.io/github/contributors/openaether/openaether)](https://github.com/openaether/openaether/graphs/contributors)
+[![Stars](https://img.shields.io/github/stars/openaether/openaether?style=social)](https://github.com/openaether/openaether/stargazers)
 
-### The Premium Marketplace for Mobile Legends Accounts
+**Access Multiple Free AI Models Through One Beautiful Interface**
 
-<p>
-Buy • Sell • Trade • Securely
-</p>
+*Free Forever • Open Source • Privacy First*
 
-<p>
-<img src="https://img.shields.io/badge/React-19-61DAFB?style=for-the-badge&logo=react"/>
-<img src="https://img.shields.io/badge/Vite-646CFF?style=for-the-badge&logo=vite"/>
-<img src="https://img.shields.io/badge/Supabase-3ECF8E?style=for-the-badge&logo=supabase"/>
-<img src="https://img.shields.io/badge/Tailwind-38B2AC?style=for-the-badge&logo=tailwindcss"/>
-<img src="https://img.shields.io/badge/License-MIT-success?style=for-the-badge"/>
-</p>
-
-<img src="public/hero-zaza.jpg" width="100%"/>
-
-### 🚀 Buy & Sell Mobile Legends Accounts with Confidence
-
-[🌐 Live Demo](https://your-demo-link.com) •
-[📖 Documentation](https://your-docs.com) •
-[🐛 Report Bug](https://github.com/yourrepo/issues) •
-[⭐ Star this Repository](https://github.com/yourrepo)
+[Live Demo](https://openaether.vercel.app) • [Documentation](https://github.com/openaether/openaether/wiki) • [Report Bug](https://github.com/openaether/openaether/issues) • [Request Feature](https://github.com/openaether/openaether/issues)
 
 </div>
 
 ---
 
-# ✨ About
+## 🌟 What is OpenAether?
 
-ZAZA Store is a **modern SaaS marketplace** designed for buying and selling **Mobile Legends: Bang Bang accounts** safely and efficiently.
+OpenAether is an **open-source platform** that aggregates free AI models from multiple providers into a single, unified interface. Instead of managing multiple API keys and learning different APIs, users can access GPT-4o Mini, Gemma, GLM, MiniMax, and more through one clean, intuitive platform.
 
-Built with a premium dark UI, smooth animations, and Supabase backend, ZAZA Store provides a seamless experience for buyers, sellers, and administrators.
+### Why OpenAether?
 
----
-
-# 📸 Preview
-
-| Home | Marketplace |
-|------|-------------|
-| ![](public/hero-zaza.jpg) | ![](public/marketplace.jpg) |
-
-| Seller Dashboard | Admin Panel |
-|-----------------|-------------|
-| ![](public/dashboard.jpg) | ![](public/zaza-admin.jpg) |
+- 💰 **100% Free** - Uses free tiers from OpenRouter, Groq, and Gemini
+- 🔄 **Smart Routing** - Automatically selects the best model for your task
+- 🛡️ **Automatic Failover** - If one provider fails, another takes over seamlessly
+- 🔒 **Privacy First** - Your data never leaves your control
+- 🎨 **Beautiful UI** - Dark/Light themes, markdown support, code highlighting
+- 📱 **Responsive** - Works on desktop, tablet, and mobile
+- 🚀 **Open Source** - Community-driven and transparent
 
 ---
 
-# 🔥 Features
+## ✨ Features
 
-- 🎮 Buy MLBB Accounts
-- 💰 Sell Accounts
-- 🔍 Powerful Search & Filters
-- ⭐ Reviews & Ratings
-- ❤️ Wishlist
-- 💬 Real-time Chat
-- 🔐 Secure Authentication
-- ☁️ Cloud Storage
-- 📱 Fully Responsive
-- ✨ Glassmorphism UI
-- ⚡ GSAP + Framer Motion Animations
-- 👑 Admin Dashboard
-- 🔔 Real-time Notifications
-- 📈 Seller Analytics
-- 🤖 AI-powered Features (Upcoming)
+### 🤖 Multi-Provider Support
 
----
+| Provider | Free Models | Status |
+|----------|-------------|--------|
+| OpenRouter | GPT-4o Mini, Gemma 4, GLM 5.2, MiniMax M3 | ✅ Active |
+| Groq | GPT-OSS 20B, GPT-OSS 120B | ⏳ Coming Soon |
+| Gemini | Gemini 1.5 Flash, Gemini Pro | ⏳ Coming Soon |
 
-# 🛒 Buying an Account
+### 💬 Advanced Chat Features
 
-```text
-Browse Marketplace
-      ↓
-Filter by Rank / Skins / Price
-      ↓
-Open Listing
-      ↓
-View Complete Details
-      ↓
-Purchase Securely
-      ↓
-Receive Account
-      ↓
-Leave Review ⭐
-```
+- **Markdown Rendering** - Headers, lists, tables, code blocks
+- **Syntax Highlighting** - 30+ programming languages
+- **Copy Buttons** - Copy messages or individual code blocks
+- **Edit Messages** - Edit user messages and regenerate responses
+- **Regenerate** - Get new AI responses
+- **Delete Messages** - Remove unwanted messages
+- **Auto-Titled Conversations** - Conversations named from first message
+- **Typing Indicator** - Animated dots while AI thinks
 
----
+### 🎯 Smart Routing
 
-# 💰 Selling an Account
+- **Task-Based Routing** - Coding, chat, analysis
+- **Model Rotation** - Avoids rate limits
+- **Automatic Failover** - Switches providers on failure
+- **Rate Limit Management** - Respects free tier limits
+- **Response Caching** - Reduces redundant API calls
 
-```text
-Create Seller Account
-        ↓
-Upload Account Details
-        ↓
-Verification
-        ↓
-Listing Published
-        ↓
-Buyer Purchases
-        ↓
-Payment Received
-```
+### 👤 User Features
+
+- **Authentication** - Email/Password + Google (coming soon)
+- **Profile Management** - Update username, profile picture
+- **API Key Management** - Secure storage, test keys
+- **Conversation History** - Save and organize chats
+- **Dashboard** - Usage statistics, activity tracking
 
 ---
 
-# 🏗 Tech Stack
+## 🛠️ Tech Stack
 
-| Frontend | Backend |
-|-----------|----------|
-| React | Supabase |
-| Vite | PostgreSQL |
-| Tailwind CSS | Authentication |
-| Framer Motion | Storage |
-| GSAP | Realtime |
-| React Router | Row Level Security |
-| React Hook Form | Edge Functions |
-| Zod | Database |
+<div align="center">
 
----
+| Layer | Technology |
+|-------|------------|
+| **Frontend** | React 18, Vite, Tailwind CSS v4 |
+| **UI Components** | shadcn/ui, Radix UI |
+| **State Management** | Zustand |
+| **Database** | Supabase (PostgreSQL) |
+| **Authentication** | Supabase Auth |
+| **API Providers** | OpenRouter, Groq, Gemini |
+| **Markdown** | react-markdown, remark-gfm |
+| **Syntax Highlighting** | react-syntax-highlighter |
+| **Animations** | Framer Motion |
+| **Icons** | Lucide React |
 
-# 📂 Project Structure
-
-```
-src
- ├── components
- ├── pages
- ├── layouts
- ├── hooks
- ├── lib
- ├── services
- ├── stores
- ├── context
- ├── assets
- └── utils
-```
+</div>
 
 ---
 
-# 🚀 Installation
+## 🚀 Quick Start
+
+### Prerequisites
+
+- Node.js 18+
+- npm or yarn
+- Supabase account (free)
+- OpenRouter API key (free)
+
+### Installation
 
 ```bash
-git clone https://github.com/yourusername/zaza-store.git
+# Clone the repository
+git clone https://github.com/openaether/openaether.git
 
-cd zaza-store
+# Navigate to project
+cd openaether
 
+# Install dependencies
 npm install
 
-npm run dev
-```
-
----
-
-# 🔑 Environment Variables
-
-```env
-VITE_SUPABASE_URL=
-
-VITE_SUPABASE_ANON_KEY=
-
-VITE_OPENAI_API_KEY=
-```
-
----
-
-# 🔒 Security
-
-- ✅ Supabase Authentication
-- ✅ Row Level Security
-- ✅ Protected Routes
-- ✅ Secure Database Policies
-- ✅ Image Storage
-- ✅ Account Verification
-
----
-
-# 🤖 Future AI Features
-
-- AI Listing Generator
-- AI Price Recommendation
-- AI Scam Detection
-- AI Search Assistant
-- AI Chat Support
-- AI Fraud Prevention
-
----
-
-# 🗺 Roadmap
-
-- ✅ Authentication
-- ✅ Marketplace
-- ✅ Seller Dashboard
-- ✅ Admin Dashboard
-- ✅ Wishlist
-- ✅ Reviews
-- 🔄 Real-time Chat
-- 🔄 Notifications
-- 🔄 Payment Gateway
-- 🔄 AI Assistant
-- 🔄 Mobile App
-
----
-
-# ❤️ Contributing
-
-Contributions are always welcome.
-
-```bash
-Fork Repository
-
-Create Branch
-
-Commit Changes
-
-Open Pull Request
-```
-
----
-
-# ⭐ Support
-
-If you like this project, don't forget to give it a ⭐
-
----
-
-<div align="center">
-
-## Built by Saad Asim
-
-<img src="public/hero-zaza.jpg" width="100%">
-
-### ⚡ ZAZA STORE — Buy. Sell. Dominate.
-
-</div>
+# Create environment variables
+cp .env.example .env.local
