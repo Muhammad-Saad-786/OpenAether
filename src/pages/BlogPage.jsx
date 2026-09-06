@@ -1,7 +1,50 @@
 // src/pages/BlogPage.jsx
 import { Link } from 'react-router-dom';
-import { Zap, Users, Globe, Code2, Mail } from 'lucide-react';
+import { Calendar, ArrowRight, Tag, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+
+const blogPosts = [
+  {
+    id: 1,
+    title: 'Introducing OpenAether: Free AI for Everyone',
+    excerpt:
+      'Learn how OpenAether is democratizing AI access with free models from multiple providers.',
+    date: '2025-01-15',
+    readTime: '5 min read',
+    category: 'Announcement',
+    tags: ['Open Source', 'AI', 'Launch'],
+  },
+  {
+    id: 2,
+    title: 'How Smart Model Routing Works',
+    excerpt:
+      'Discover how OpenAether automatically switches between models when rate limits are hit.',
+    date: '2025-02-01',
+    readTime: '7 min read',
+    category: 'Tutorial',
+    tags: ['Smart Routing', 'Rate Limits', 'Models'],
+  },
+  {
+    id: 3,
+    title: 'Getting Started with OpenRouter API',
+    excerpt: 'A step-by-step guide to getting your free API key and connecting it to OpenAether.',
+    date: '2025-02-15',
+    readTime: '4 min read',
+    category: 'Guide',
+    tags: ['API', 'Setup', 'OpenRouter'],
+  },
+  {
+    id: 4,
+    title: 'CLI Version: Coming Soon',
+    excerpt:
+      'Use OpenAether directly in your terminal. No more copy-paste between browser and IDE.',
+    date: '2025-03-01',
+    readTime: '3 min read',
+    category: 'Upcoming',
+    tags: ['CLI', 'Terminal', 'Developer Tools'],
+  },
+];
 
 export function BlogPage() {
   return (
@@ -14,89 +57,95 @@ export function BlogPage() {
               Blog
             </h1>
             <p className="mt-6 text-lg leading-relaxed text-muted-foreground max-w-2xl mx-auto">
-              Read latest articles about AI, open source, and development tips.
+              Updates, tutorials, and insights from the OpenAether team.
             </p>
           </div>
         </div>
       </section>
 
-      {/* Blog Posts */}
-      <section className="py-24 sm:py-32">
+      {/* Blog Posts Grid */}
+      <section className="pb-24 sm:pb-32">
         <div className="mx-auto max-w-7xl px-6 lg:px-8">
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {/* Post 1 */}
-            <div>
-              <div className="group rounded-xl bg-card p-6 transition-all duration-300 hover:border-aether-500/30 hover:shadow-lg">
-                <div className="mb-4 flex size-10 items-center justify-center rounded-xl bg-aether-500/10">
-                  <Zap className="size-6 text-aether-500" />
+          <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
+            {blogPosts.map((post) => (
+              <article
+                key={post.id}
+                className="group relative rounded-2xl border bg-card p-8 transition-all duration-300 hover:border-aether-500/30 hover:shadow-lg hover:shadow-aether-500/5"
+              >
+                {/* Category Badge */}
+                <div className="mb-4">
+                  <Badge variant="secondary" className="bg-aether-500/10 text-aether-500">
+                    {post.category}
+                  </Badge>
                 </div>
-                <h3 className="text-lg font-semibold text-foreground">AI Model Comparison</h3>
-                <p className="mt-2 text-sm text-muted-foreground">
-                  Comparing different AI models for various use cases.
-                </p>
-                <div className="mt-4">
-                  <Link to="#" className="text-primary hover:underline transition-colors">
-                    Read more
-                  </Link>
+
+                {/* Title */}
+                <h2 className="text-2xl font-bold mb-3 group-hover:text-aether-500 transition-colors">
+                  {post.title}
+                </h2>
+
+                {/* Excerpt */}
+                <p className="text-muted-foreground mb-6 leading-relaxed">{post.excerpt}</p>
+
+                {/* Meta Info */}
+                <div className="flex items-center gap-4 text-sm text-muted-foreground mb-4">
+                  <span className="flex items-center gap-1">
+                    <Calendar className="size-4" />
+                    {new Date(post.date).toLocaleDateString('en-US', {
+                      month: 'long',
+                      day: 'numeric',
+                      year: 'numeric',
+                    })}
+                  </span>
+                  <span>{post.readTime}</span>
                 </div>
-              </div>
-            </div>
-            {/* Post 2 */}
-            <div>
-              <div className="group rounded-xl bg-card p-6 transition-all duration-300 hover:border-aether-500/30 hover:shadow-lg">
-                <div className="mb-4 flex size-10 items-center justify-center rounded-xl bg-aether-500/10">
-                  <Users className="size-6 text-aether-500" />
+
+                {/* Tags */}
+                <div className="flex flex-wrap gap-2 mb-6">
+                  {post.tags.map((tag) => (
+                    <span
+                      key={tag}
+                      className="flex items-center gap-1 rounded-full bg-muted px-3 py-1 text-xs text-muted-foreground"
+                    >
+                      <Tag className="size-3" />
+                      {tag}
+                    </span>
+                  ))}
                 </div>
-                <h3 className="text-lg font-semibold text-foreground">Open Source AI</h3>
-                <p className="mt-2 text-sm text-muted-foreground">
-                  How open source is transforming AI accessibility.
-                </p>
-                <div className="mt-4">
-                  <Link to="#" className="text-primary hover:underline transition-colors">
-                    Read more
-                  </Link>
-                </div>
-              </div>
-            </div>
-            {/* Post 3 */}
-            <div>
-              <div className="group rounded-xl bg-card p-6 transition-all duration-300 hover:border-aether-500/30 hover:shadow-lg">
-                <div className="mb-4 flex size-10 items-center justify-center rounded-xl bg-aether-500/10">
-                  <Globe className="size-6 text-aether-500" />
-                </div>
-                <h3 className="text-lg font-semibold text-foreground">Local AI Deployment</h3>
-                <p className="mt-2 text-sm text-muted-foreground">
-                  Running AI models locally for privacy and control.
-                </p>
-                <div className="mt-4">
-                  <Link to="#" className="text-primary hover:underline transition-colors">
-                    Read more
-                  </Link>
-                </div>
-              </div>
-            </div>
+
+                {/* Read More */}
+                <Link
+                  to={`/blog/${post.id}`}
+                  className="inline-flex items-center gap-1 text-sm font-medium text-aether-500 hover:underline"
+                >
+                  Read More
+                  <ArrowRight className="size-4 group-hover:translate-x-1 transition-transform" />
+                </Link>
+              </article>
+            ))}
           </div>
         </div>
       </section>
 
       {/* CTA */}
-      <section className="pb-24 sm:pb-32 bg-muted/50">
+      <section className="pb-24 sm:pb-32">
         <div className="mx-auto max-w-7xl px-6 lg:px-8">
-          <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-aether-500/10 to-aether-400/10 px-8 py-12 text-center sm:px-16">
-            <div>
-              <h2 className="text-3xl font-bold tracking-tight sm:text-4xl gradient-text">
-                Stay Updated
-              </h2>
-              <p className="mt-4 text-lg text-muted-foreground">
-                Subscribe for latest news and articles.
-              </p>
-              <div className="mt-8">
-                <Link to="/contact">
-                  <Button variant="outline" size="xl" className="px-8">
-                    Contact Us
-                  </Button>
-                </Link>
-              </div>
+          <div className="rounded-3xl bg-gradient-to-br from-aether-500/10 to-aether-400/10 px-8 py-16 text-center">
+            <Sparkles className="size-12 text-aether-500 mx-auto mb-4" />
+            <h2 className="text-3xl font-bold gradient-text">Stay Updated</h2>
+            <p className="mt-4 text-lg text-muted-foreground">
+              Follow us on GitHub for the latest updates.
+            </p>
+            <div className="mt-8">
+              <a
+                href="https://github.com/Muhammad-Saad-786/openaether"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <Button variant="gradient" size="xl" className="px-8">
+                  Follow on GitHub
+                </Button>
+              </a>
             </div>
           </div>
         </div>

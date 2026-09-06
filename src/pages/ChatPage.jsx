@@ -318,7 +318,7 @@ export function ChatPage() {
                     'group mb-1 flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2 text-left text-sm transition-colors',
                     currentConversation?.id === conv.id
                       ? 'bg-aether-500/10 text-aether-500 font-medium'
-                      : 'text-muted-foreground hover:bg-accent hover:text-foreground',
+                      : 'text-black hover:bg-accent hover:text-foreground',
                   )}
                 >
                   <MessageSquare className="size-4 shrink-0" />
@@ -372,9 +372,6 @@ export function ChatPage() {
         >
           {messages.length === 0 && !isSending ? (
             <div className="flex h-full flex-col items-center justify-center text-center px-4">
-              <div className="mb-4 flex size-16 items-center justify-center rounded-2xl bg-gradient-to-br from-aether-500 to-aether-400 shadow-md">
-                <span className="text-2xl font-bold text-white">O</span>
-              </div>
               <h2 className="text-2xl font-bold tracking-tight">How can I help you today?</h2>
               <p className="mt-2 max-w-md text-sm text-muted-foreground">
                 Start a conversation with OpenAether. Your messages are saved automatically.

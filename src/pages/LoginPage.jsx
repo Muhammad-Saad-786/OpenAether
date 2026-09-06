@@ -22,7 +22,7 @@ export function LoginPage() {
   const login = useAuthStore((state) => state.login);
   const navigate = useNavigate();
   const location = useLocation();
-  const from = location.state?.from?.pathname || '/dashboard';
+  const from = location.state?.from?.pathname || '/chat';
 
   const {
     register,
@@ -118,10 +118,6 @@ export function LoginPage() {
             </div>
 
             <div className="flex items-center justify-between">
-              <label className="flex items-center gap-2 text-sm">
-                <input type="checkbox" className="rounded" />
-                Remember me
-              </label>
               <Link to="/forgot-password" className="text-sm text-aether-500 hover:underline">
                 Forgot password?
               </Link>

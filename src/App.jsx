@@ -1,5 +1,6 @@
 // src/App.jsx
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
+import { useEffect } from 'react';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { Toaster } from '@/components/ui/sonner';
 import { AuthProvider } from '@/contexts/AuthContext';
@@ -16,17 +17,28 @@ import { SignupPage } from '@/pages/SignupPage';
 import { NotFoundPage } from '@/pages/NotFoundPage';
 import { AboutPage } from '@/pages/AboutPage';
 import { CareersPage } from '@/pages/CareersPage';
-import { ContactPage } from '@/pages/ContactPage';
 import { DocsPage } from '@/pages/DocsPage';
 import { BlogPage } from '@/pages/BlogPage';
 import { ContributingPage } from '@/pages/ContributingPage';
+import PrivacyPolicyPage from './pages/PrivacyPolicyPage';
+import { ContactPage } from '@/pages/ContactPage';
 
+function ScrollToTop() {
+  const { pathname } = useLocation();
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [pathname]);
+
+  return null;
+}
 export default function App() {
   return (
     <TooltipProvider>
       <AuthProvider>
         <Router>
-          <div className="min-h-screen bg-background text-foreground flex flex-col">
+          <div className="min-h-screen bg-background text-foreground flex flex-col w-full">
+            <ScrollToTop />
             <Navbar />
             <main className="flex-1">
               <Routes>
@@ -35,12 +47,13 @@ export default function App() {
                 <Route path="/models" element={<ModelsPage />} />
                 <Route path="/about" element={<AboutPage />} />
                 <Route path="/careers" element={<CareersPage />} />
-                <Route path="/contact" element={<ContactPage />} />
                 <Route path="/docs" element={<DocsPage />} />
                 <Route path="/contributing" element={<ContributingPage />} />
                 <Route path="/blog" element={<BlogPage />} />
                 <Route path="/login" element={<LoginPage />} />
                 <Route path="/signup" element={<SignupPage />} />
+                <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
+                <Route path="/contact" element={<ContactPage />} />
 
                 {/* Protected Routes */}
                 <Route

@@ -66,7 +66,7 @@ export function Navbar() {
 
   return (
     <nav className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-full px-4 sm:px-6 lg:px-8">
         <div className="flex h-16 items-center justify-between">
           {/* Logo */}
           <Link to="/" className="flex items-center gap-3 group">
@@ -107,7 +107,7 @@ export function Navbar() {
           <div className="hidden items-center gap-3 md:flex">
             {/* GitHub Link */}
             <a
-              href="https://github.com/openaether/openaether"
+              href="https://github.com/Muhammad-Saad-786/openaether"
               target="_blank"
               rel="noopener noreferrer"
               className="rounded-lg p-2 transition-colors hover:bg-accent"
