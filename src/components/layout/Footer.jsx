@@ -49,11 +49,15 @@ export function Footer() {
         <div className="grid grid-cols-2 gap-8 md:grid-cols-5">
           {/* Brand Column */}
           <div className="col-span-2">
-            <Link to="/" className="flex items-center gap-3">
-              <div className="flex size-10 items-center justify-center rounded-xl bg-gradient-to-br from-aether-500 to-aether-400">
-                <span className="text-xl font-bold text-white">O</span>
-              </div>
-              <span className="text-2xl font-bold gradient-text">OpenAether</span>
+            {/* Logo */}
+            <Link to="/" className="flex items-center gap-3 group">
+              <img
+                src="/openaether-abstract.png"
+                alt="OpenAether Logo"
+                className="h-10 w-10 transition-transform duration-200"
+              />
+
+              <span className="hidden text-xl font-bold sm:block">OpenAether</span>
             </Link>
             <p className="mt-4 max-w-sm text-sm leading-6 text-muted-foreground">
               Democratizing AI access through open source. Free, private, and accessible to

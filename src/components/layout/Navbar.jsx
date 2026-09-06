@@ -69,11 +69,14 @@ export function Navbar() {
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="flex h-16 items-center justify-between">
           {/* Logo */}
-          <Link to="/" className="flex items-center gap-2 group">
-            <div className="relative flex size-8 items-center justify-center rounded-lg bg-gradient-to-br from-aether-500 to-aether-400 transition-transform group-hover:scale-110">
-              <span className="text-lg font-bold text-white">O</span>
-            </div>
-            <span className="hidden text-xl font-bold gradient-text sm:block">OpenAether</span>
+          <Link to="/" className="flex items-center gap-3 group">
+            <img
+              src="/openaether-abstract.png"
+              alt="OpenAether Logo"
+              className="h-10 w-10 transition-transform duration-200"
+            />
+
+            <span className="hidden text-xl font-bold sm:block">OpenAether</span>
           </Link>
 
           {/* Desktop Navigation */}
@@ -123,7 +126,10 @@ export function Navbar() {
 
             {isAuthenticated ? (
               <>
-                <Link to="/settings" className="flex items-center gap-2 rounded-lg p-1 transition-colors hover:bg-accent">
+                <Link
+                  to="/settings"
+                  className="flex items-center gap-2 rounded-lg p-1 transition-colors hover:bg-accent"
+                >
                   <Avatar className="size-8">
                     <AvatarImage src={user?.user_metadata?.avatar_url} />
                     <AvatarFallback className="bg-gradient-to-br from-aether-500 to-aether-400 text-white text-xs">
