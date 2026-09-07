@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { Calendar, ArrowRight, Tag, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { SEO } from '@/components/seo/SEO';
 
 const blogPosts = [
   {
@@ -48,7 +49,14 @@ const blogPosts = [
 
 export function BlogPage() {
   return (
-    <div className="flex flex-col min-h-screen bg-background text-foreground">
+    <>
+      <SEO
+        title="OpenAether Blog - AI, Open Source, and Free Models"
+        description="Read the latest from the OpenAether team: product launches, tutorials on free AI models, and open-source engineering notes."
+        keywords="OpenAether blog, AI blog, open source AI news"
+        path="/blog"
+      />
+      <div className="flex flex-col min-h-screen bg-background text-foreground">
       {/* Hero Section */}
       <section className="relative py-24 sm:py-32">
         <div className="mx-auto max-w-7xl px-6 lg:px-8">
@@ -151,6 +159,7 @@ export function BlogPage() {
         </div>
       </section>
     </div>
+    </>
   );
 }
 

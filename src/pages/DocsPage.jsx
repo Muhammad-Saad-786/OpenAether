@@ -2,6 +2,8 @@
 import { Link } from 'react-router-dom';
 import { KeyRound, MessageSquare, Cpu, Terminal, Shield, Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { SEO } from '@/components/seo/SEO';
+import { breadcrumbSchema, faqSchema } from '@/components/seo/structuredData';
 
 const docSections = [
   {
@@ -30,12 +32,12 @@ const docSections = [
   },
   {
     icon: Terminal,
-    title: 'CLI (Coming Soon)',
+    title: 'CLI Available',
     description: 'Use OpenAether from your terminal.',
     commands: [
-      'npm install -g openaether-cli',
-      'openaether setup',
-      'openaether chat',
+      'npm install -g openaether',
+      '$env:OPENAETHER_API_KEY="YOUR_API_KEY"',
+      'openaether',
       'openaether ask "Your question"',
     ],
   },
@@ -43,7 +45,32 @@ const docSections = [
 
 export function DocsPage() {
   return (
-    <div className="flex flex-col min-h-screen bg-background text-foreground">
+    <>
+      <SEO
+        title="OpenAether Docs - Setup, CLI, and Free AI Models"
+        description="Complete documentation for OpenAether. Learn how to set up your API key, install the OpenAether CLI, and chat with GPT-4o Mini, Gemma, GLM, and MiniMax."
+        keywords="OpenAether docs, openaether cli docs, OpenAether setup, OpenAether CLI install, OpenRouter CLI"
+        path="/docs"
+        structuredData={[
+          breadcrumbSchema([
+            { name: 'Home', url: '/' },
+            { name: 'Docs', url: '/docs' },
+          ]),
+          faqSchema([
+            {
+              question: 'How do I install OpenAether CLI?',
+              answer:
+                'Run npm install -g openaether, set your OPENAETHER_API_KEY environment variable, then run openaether.',
+            },
+            {
+              question: 'Which models does OpenAether support?',
+              answer:
+                'OpenAether supports GPT-4o Mini, Gemma 4 26B/31B, GLM 5.2, MiniMax M3, Nemotron 3.5, Cohere North Mini, and any new free OpenRouter model.',
+            },
+          ]),
+        ]}
+      />
+      <div className="flex flex-col min-h-screen bg-background text-foreground">
       {/* Hero */}
       <section className="relative py-24 sm:py-32">
         <div className="mx-auto max-w-7xl px-6 lg:px-8">
@@ -134,6 +161,7 @@ export function DocsPage() {
         </div>
       </section>
     </div>
+    </>
   );
 }
 

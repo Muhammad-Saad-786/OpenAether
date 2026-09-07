@@ -19,6 +19,8 @@ import { useModelStore } from '@/stores/modelStore';
 import { useAuthStore } from '@/stores/authStore';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
+import { SEO } from '@/components/seo/SEO';
+import { breadcrumbSchema } from '@/components/seo/structuredData';
 
 const staticModels = [
   {

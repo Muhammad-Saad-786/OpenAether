@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">
+
+  <!-- OpenAether CLI Landing - Optimized for "openaether cli" searches -->
+  <url>
+    <loc>https://openaether.saadasim.me/cli</loc>
+    <lastmod>2026-01-15</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>1.0</priority>
+    <image:image>
+      <image:loc>https://openaether.saadasim.me/og-image-openaether.png</image:loc>
+      <image:title>OpenAether CLI - npm Package</image:title>
+    </image:image>
+  </url>
+
+  <!-- npm package reference -->
+  <url>
+    <loc>https://www.npmjs.com/package/openaether</loc>
+    <lastmod>2026-01-15</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <!-- Documentation for CLI -->
+  <url>
+    <loc>https://openaether.saadasim.me/docs#cli</loc>
+    <lastmod>2026-01-15</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <!-- Homepage also targets CLI -->
+  <url>
+    <loc>https://openaether.saadasim.me/?ref=cli</loc>
+    <lastmod>2026-01-15</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+
+</urlset>

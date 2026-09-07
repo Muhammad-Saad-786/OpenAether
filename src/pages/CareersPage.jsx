@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { SEO } from '@/components/seo/SEO';
 
 const openPositions = [
   {
@@ -71,7 +72,14 @@ const benefits = [
 
 export function CareersPage() {
   return (
-    <div className="min-h-screen bg-background text-foreground">
+    <>
+      <SEO
+        title="Careers at OpenAether - Build the Future of Free AI"
+        description="Join the OpenAether team. We are hiring remote, open-source contributors who want to make AI accessible to everyone."
+        keywords="OpenAether careers, OpenAether jobs, open source AI jobs"
+        path="/careers"
+      />
+      <div className="min-h-screen bg-background text-foreground">
       {/* Hero - Compact */}
       <section className="py-16 sm:py-20">
         <div className="mx-auto max-w-4xl px-6 text-center">
@@ -202,6 +210,7 @@ export function CareersPage() {
         </div>
       </section>
     </div>
+    </>
   );
 }
 

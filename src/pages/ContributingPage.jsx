@@ -12,6 +12,7 @@ import {
   Sparkles,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { SEO } from '@/components/seo/SEO';
 
 // Custom GitHub Icon
 function GithubIcon({ className }) {
@@ -76,7 +77,14 @@ const techStack = [
 
 export function ContributingPage() {
   return (
-    <div className="flex flex-col min-h-screen bg-background text-foreground">
+    <>
+      <SEO
+        title="Contributing to OpenAether - Open Source AI"
+        description="Contribute to OpenAether on GitHub. File issues, send PRs, write docs, or spread the word. Every contribution makes AI more accessible."
+        keywords="OpenAether contributing, open source contribution, OpenAether GitHub"
+        path="/contributing"
+      />
+      <div className="flex flex-col min-h-screen bg-background text-foreground">
       {/* Hero Section */}
       <section className="relative py-24 sm:py-32">
         <div className="mx-auto max-w-7xl px-6 lg:px-8">
@@ -238,6 +246,7 @@ export function ContributingPage() {
         </div>
       </section>
     </div>
+    </>
   );
 }
 

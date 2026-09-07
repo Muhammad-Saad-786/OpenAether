@@ -1,6 +1,7 @@
 // src/App.jsx
 import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 import { useEffect } from 'react';
+import { HelmetProvider } from 'react-helmet-async';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { Toaster } from '@/components/ui/sonner';
 import { AuthProvider } from '@/contexts/AuthContext';
@@ -22,6 +23,7 @@ import { BlogPage } from '@/pages/BlogPage';
 import { ContributingPage } from '@/pages/ContributingPage';
 import PrivacyPolicyPage from './pages/PrivacyPolicyPage';
 import { ContactPage } from '@/pages/ContactPage';
+import { CLILandingPage } from '@/pages/CLILandingPage';
 
 function ScrollToTop() {
   const { pathname } = useLocation();
@@ -34,15 +36,17 @@ function ScrollToTop() {
 }
 export default function App() {
   return (
-    <TooltipProvider>
-      <AuthProvider>
-        <Router>
+    <HelmetProvider>
+      <TooltipProvider>
+        <AuthProvider>
+          <Router>
           <div className="min-h-screen bg-background text-foreground flex flex-col w-full">
             <ScrollToTop />
             <Navbar />
             <main className="flex-1">
               <Routes>
-                {/* Public Routes */}
+                {/* Public Routes - '/' is the public homepage for best SEO */}
+                <Route path="/" element={<HomePage />} />
                 <Route path="/home" element={<HomePage />} />
                 <Route path="/models" element={<ModelsPage />} />
                 <Route path="/about" element={<AboutPage />} />
@@ -55,15 +59,10 @@ export default function App() {
                 <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
                 <Route path="/contact" element={<ContactPage />} />
 
+                {/* CLI Landing Page - targeted for "openaether cli" searches */}
+                <Route path="/cli" element={<CLILandingPage />} />
+
                 {/* Protected Routes */}
-                <Route
-                  path="/"
-                  element={
-                    <ProtectedRoute>
-                      <ChatPage />
-                    </ProtectedRoute>
-                  }
-                />
                 <Route
                   path="/chat"
                   element={
@@ -97,7 +96,8 @@ export default function App() {
           </div>
         </Router>
         <Toaster />
-      </AuthProvider>
-    </TooltipProvider>
+        </AuthProvider>
+      </TooltipProvider>
+    </HelmetProvider>
   );
 }

@@ -2,6 +2,8 @@
 import { Link } from 'react-router-dom';
 import { Shield, Zap, Cpu, Users, Globe, Code2, KeyRound, Terminal, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { SEO } from '@/components/seo/SEO';
+import { organizationSchema } from '@/components/seo/structuredData';
 
 const features = [
   {
@@ -42,7 +44,15 @@ const features = [
 
 export function AboutPage() {
   return (
-    <div className="flex flex-col min-h-screen bg-background text-foreground">
+    <>
+      <SEO
+        title="About OpenAether - Free, Open Source AI for Everyone"
+        description="OpenAether is an open-source platform aggregating free AI models from OpenRouter, Groq, and Gemini into one beautiful interface. MIT licensed."
+        keywords="about OpenAether, OpenAether mission, open source AI platform"
+        path="/about"
+        structuredData={[organizationSchema()]}
+      />
+      <div className="flex flex-col min-h-screen bg-background text-foreground">
       {/* Hero Section */}
       <section className="relative py-24 sm:py-32">
         <div className="mx-auto max-w-7xl px-6 lg:px-8">
@@ -166,6 +176,7 @@ export function AboutPage() {
         </div>
       </section>
     </div>
+    </>
   );
 }
 

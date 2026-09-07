@@ -1,0 +1,35 @@
+# robots.txt for OpenAether
+# https://openaether.saadasim.me
+
+User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /dashboard
+Disallow: /settings
+Disallow: /chat
+
+# Prioritize crawlers
+User-agent: Googlebot
+Allow: /
+
+User-agent: Bingbot
+Allow: /
+
+User-agent: Slurp
+Allow: /
+
+User-agent: DuckDuckBot
+Allow: /
+
+User-agent: Baiduspider
+Allow: /
+
+User-agent: YandexBot
+Allow: /
+
+# Sitemaps
+Sitemap: https://openaether.saadasim.me/sitemap.xml
+Sitemap: https://openaether.saadasim.me/sitemap-cli.xml
+
+# Crawl-delay (optional, be polite)
+Crawl-delay: 1
