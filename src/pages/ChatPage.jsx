@@ -1,5 +1,5 @@
 // src/pages/ChatPage.jsx
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, memo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Send,
@@ -23,13 +23,47 @@ import { TypingIndicator } from '@/components/chat/TypingIndicator';
 import { toast } from 'sonner';
 
 const sampleModels = [
-  { id: 'auto', name: 'Auto Select', description: 'Smart model rotation', model: null },
-  { id: 'gpt4o', name: 'GPT-4o Mini', model: 'openai/gpt-4o-mini' },
-  { id: 'gemma-26b', name: 'Gemma 4 26B', model: 'google/gemma-4-26b-a4b-it:free' },
-  { id: 'gemma-31b', name: 'Gemma 4 31B', model: 'google/gemma-4-31b-it:free' },
-  { id: 'glm', name: 'GLM 5.2', model: 'z-ai/glm-5.2:free' },
-  { id: 'minimax', name: 'MiniMax M3', model: 'minimax/minimax-m3:free' },
+  { id: 'auto', name: 'Auto Select', model: null, provider: null },
+  { id: 'or-gpt4o', name: 'GPT-4o Mini', model: 'openai/gpt-4o-mini', provider: 'openrouter' },
+  {
+    id: 'or-gemma-26b',
+    name: 'Gemma 26B',
+    model: 'google/gemma-4-26b-a4b-it:free',
+    provider: 'openrouter',
+  },
+  {
+    id: 'or-gemma-31b',
+    name: 'Gemma 31B',
+    model: 'google/gemma-4-31b-it:free',
+    provider: 'openrouter',
+  },
+  { id: 'or-glm', name: 'GLM 5.2', model: 'z-ai/glm-5.2:free', provider: 'openrouter' },
+  {
+    id: 'or-minimax',
+    name: 'MiniMax M3',
+    model: 'minimax/minimax-m3:free',
+    provider: 'openrouter',
+  },
+  { id: 'groq-gptoss20', name: 'GPT-OSS 20B ⚡', model: 'openai/gpt-oss-20b', provider: 'groq' },
+  { id: 'groq-gptoss120', name: 'GPT-OSS 120B 🧠', model: 'openai/gpt-oss-120b', provider: 'groq' },
+  { id: 'groq-compound', name: 'Groq Compound 🤖', model: 'groq/compound', provider: 'groq' },
+  {
+    id: 'groq-compound-mini',
+    name: 'Compound Mini ⚡',
+    model: 'groq/compound-mini',
+    provider: 'groq',
+  },
+  { id: 'groq-qwen36', name: 'Qwen 3.6 27B', model: 'qwen/qwen3.6-27b', provider: 'groq' },
+  { id: 'groq-qwen38', name: 'Qwen 3.8 27B', model: 'qwen/qwen3.8-27b', provider: 'groq' },
+  {
+    id: 'groq-orpheus',
+    name: 'Orpheus English',
+    model: 'canopylabs/orpheus-v1-english',
+    provider: 'groq',
+  },
 ];
+
+const MemoizedMessageBubble = memo(MessageBubble);
 
 export function ChatPage() {
   const [input, setInput] = useState('');
@@ -37,6 +71,8 @@ export function ChatPage() {
   const [isSending, setIsSending] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [showScrollButton, setShowScrollButton] = useState(false);
+  const [visibleCount, setVisibleCount] = useState(15);
+
   const messagesEndRef = useRef(null);
   const messagesContainerRef = useRef(null);
   const textareaRef = useRef(null);
@@ -47,7 +83,6 @@ export function ChatPage() {
     conversations,
     currentConversation,
     messages,
-    loading: chatLoading,
     loadConversations,
     createConversation,
     setCurrentConversation,
@@ -55,7 +90,6 @@ export function ChatPage() {
     deleteConversation,
     deleteMessage,
     updateMessage,
-    clearMessages,
   } = useChatStore();
 
   useEffect(() => {
@@ -68,51 +102,70 @@ export function ChatPage() {
     }
   }, [isAuthenticated, loading, navigate, loadConversations]);
 
+  const scrollToBottom = useCallback(() => {
+    requestAnimationFrame(() => {
+      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
+    });
+  }, []);
+
   useEffect(() => {
     scrollToBottom();
-  }, [messages, isSending]);
+  }, [messages.length, isSending, scrollToBottom]);
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  };
-
-  const handleScroll = () => {
+  const handleScroll = useCallback(() => {
     const container = messagesContainerRef.current;
     if (container) {
       const isNearBottom =
         container.scrollHeight - container.scrollTop - container.clientHeight < 100;
       setShowScrollButton(!isNearBottom);
     }
-  };
+  }, []);
 
-  const handleNewChat = () => {
-    setSidebarOpen(false);
-
-    if (!currentConversation) {
-      return;
-    }
-
-    if (messages.length === 0) {
-      return;
-    }
+  const resetChat = useCallback(() => {
     setCurrentConversation(null);
-  };
-  const handleSelectConversation = (conversation) => {
-    setCurrentConversation(conversation);
+    setVisibleCount(15);
     setSidebarOpen(false);
-  };
+  }, [setCurrentConversation]);
 
-  const handleDeleteConversation = async (conversationId, e) => {
-    e.stopPropagation();
-    try {
-      await deleteConversation(conversationId);
-      toast.success('Conversation deleted');
-    } catch (error) {
-      toast.error('Failed to delete conversation');
+  const handleNewChat = useCallback(() => {
+    if (!currentConversation) {
+      setSidebarOpen(false);
+      return;
     }
-  };
+    if (messages.length === 0) {
+      setSidebarOpen(false);
+      return;
+    }
+    resetChat();
+  }, [currentConversation, messages.length, resetChat]);
 
-  const handleSend = async () => {
+  const handleSelectConversation = useCallback(
+    (conversation) => {
+      setCurrentConversation(conversation);
+      setVisibleCount(15);
+      setSidebarOpen(false);
+    },
+    [setCurrentConversation],
+  );
+
+  const handleDeleteConversation = useCallback(
+    async (conversationId, e) => {
+      e.stopPropagation();
+      try {
+        await deleteConversation(conversationId);
+        toast.success('Conversation deleted');
+      } catch (error) {
+        toast.error('Failed to delete conversation');
+      }
+    },
+    [deleteConversation],
+  );
+
+  const getModelConfig = useCallback((modelId) => {
+    return sampleModels.find((m) => m.id === modelId) || null;
+  }, []);
+
+  const handleSend = useCallback(async () => {
     if (!input.trim() || isSending) return;
 
     const user = useAuthStore.getState().user;
@@ -133,15 +186,8 @@ export function ChatPage() {
       await providerManager.initializeProviders(user.id);
 
       let conversation = currentConversation;
-
-      // If no conversation exists, create one with auto-generated title
       if (!conversation) {
-        conversation = await createConversation(
-          null, // No explicit title
-          selectedModel, // Provider
-          null, // Model
-          userMessage, // First message for title generation
-        );
+        conversation = await createConversation(null, selectedModel, null, userMessage);
       }
 
       await sendMessage(userMessage, 'user', selectedModel);
@@ -151,137 +197,190 @@ export function ChatPage() {
         content: m.content,
       }));
 
-      const selectedModelData = sampleModels.find((m) => m.id === selectedModel);
-      const modelName = selectedModelData?.model || null;
+      const modelConfig = getModelConfig(selectedModel);
 
+      // FIRST RESPONSE
       const response = await providerManager.smartChat(conversationMessages, {
-        model: modelName,
+        model: modelConfig?.model || null,
+        provider: modelConfig?.provider || null,
+        maxTokens: 5000,
+        temperature: 0.5,
       });
 
-      await sendMessage(response.content, 'assistant', response.model || selectedModel);
-      toast.success(`Response from ${response.model}`);
+      // Save first response and get the saved message
+      const savedMessage = await sendMessage(
+        response.content,
+        'assistant',
+        response.model || selectedModel,
+      );
+
+      // CHECK IF RESPONSE IS INCOMPLETE
+      const trimmed = response.content.trim();
+      const endsWithComplete = ['.', '!', '?', '```', '}', ';', ')', ':', '"', "'"].some((end) =>
+        trimmed.endsWith(end),
+      );
+
+      // Also check if it looks like code was cut off
+      const looksCutOff = trimmed.includes('=>') && !trimmed.includes('}');
+
+      if (!endsWithComplete || looksCutOff) {
+        toast.info('Continuing response...');
+
+        // CONTINUE WITH CONTEXT
+        const continueMessages = [
+          ...conversationMessages,
+          { role: 'assistant', content: response.content },
+          {
+            role: 'user',
+            content:
+              'Continue exactly from where you stopped. Do not repeat anything. Complete the code/explanation.',
+          },
+        ];
+
+        const continuation = await providerManager.smartChat(continueMessages, {
+          model: modelConfig?.model || null,
+          provider: modelConfig?.provider || null,
+          maxTokens: 800,
+          temperature: 0.5,
+        });
+
+        if (continuation.content && continuation.content.trim()) {
+          // Update the SAME message with combined content
+          const fullContent = response.content + '\n' + continuation.content;
+          await updateMessage(savedMessage.id, fullContent);
+        }
+      }
     } catch (error) {
       console.error('Error:', error);
       toast.error(error.message || 'Failed to get AI response');
     } finally {
       setIsSending(false);
     }
-  };
+  }, [
+    input,
+    isSending,
+    currentConversation,
+    selectedModel,
+    createConversation,
+    sendMessage,
+    updateMessage,
+    getModelConfig,
+  ]);
 
-  const handleEditMessage = async (messageId, newContent) => {
-    console.log('🔄 Editing message:', messageId, 'New content:', newContent);
-
-    try {
-      // 1. Update the user message
-      await updateMessage(messageId, newContent);
-
-      // 2. Find the message index
-      const messageIndex = messages.findIndex((m) => m.id === messageId);
-
-      // 3. Delete all messages after the edited message (AI responses)
-      const messagesToDelete = messages.slice(messageIndex + 1);
-      for (const msg of messagesToDelete) {
-        if (msg.role === 'assistant') {
-          await deleteMessage(msg.id);
-        }
-      }
-
-      // 4. Resend to AI with updated context
-      setIsSending(true);
-
+  const handleEditMessage = useCallback(
+    async (messageId, newContent) => {
       try {
+        await updateMessage(messageId, newContent);
+        const messageIndex = messages.findIndex((m) => m.id === messageId);
+        const messagesToDelete = messages.slice(messageIndex + 1);
+
+        for (const msg of messagesToDelete) {
+          if (msg.role === 'assistant') {
+            await deleteMessage(msg.id);
+          }
+        }
+
+        setIsSending(true);
         const user = useAuthStore.getState().user;
         await providerManager.initializeProviders(user.id);
 
-        // Get updated conversation messages up to the edited message
         const updatedMessages = useChatStore
           .getState()
           .messages.slice(0, messageIndex + 1)
           .map((m) => ({ role: m.role, content: m.content }));
 
-        const selectedModelData = sampleModels.find((m) => m.id === selectedModel);
-        const modelName = selectedModelData?.model || null;
+        const modelConfig = getModelConfig(selectedModel);
 
-        // Get new AI response
         const response = await providerManager.smartChat(updatedMessages, {
-          model: modelName,
+          model: modelConfig?.model || null,
+          provider: modelConfig?.provider || null,
+          maxTokens: 5000,
+          temperature: 0.5,
         });
 
-        // Save new AI response
         await sendMessage(response.content, 'assistant', response.model || selectedModel);
-
-        toast.success('Message updated and response regenerated');
+        toast.success('Message updated');
+        return true;
       } catch (error) {
-        console.error('Error regenerating response:', error);
-        toast.error('Message updated but failed to regenerate response');
+        console.error('Edit failed:', error);
+        toast.error('Failed to update message');
+        return false;
       } finally {
         setIsSending(false);
       }
+    },
+    [messages, updateMessage, deleteMessage, selectedModel, sendMessage, getModelConfig],
+  );
 
-      return true;
-    } catch (error) {
-      console.error('❌ Edit failed:', error);
-      toast.error('Failed to update message');
-      return false;
-    }
-  };
+  const handleDeleteMessage = useCallback(
+    async (messageId) => {
+      try {
+        await deleteMessage(messageId);
+        toast.success('Message deleted');
+      } catch (error) {
+        toast.error('Failed to delete message');
+      }
+    },
+    [deleteMessage],
+  );
 
-  const handleDeleteMessage = async (messageId) => {
-    try {
-      await deleteMessage(messageId);
-      toast.success('Message deleted');
-    } catch (error) {
-      toast.error('Failed to delete message');
-    }
-  };
+  const handleRegenerate = useCallback(
+    async (messageId) => {
+      const messageIndex = messages.findIndex((m) => m.id === messageId);
+      const userMessage = messages[messageIndex - 1];
 
-  const handleRegenerate = async (messageId) => {
-    const messageIndex = messages.findIndex((m) => m.id === messageId);
-    const userMessage = messages[messageIndex - 1];
+      if (!userMessage || userMessage.role !== 'user') {
+        toast.error('Cannot regenerate this message');
+        return;
+      }
 
-    if (!userMessage || userMessage.role !== 'user') {
-      toast.error('Cannot regenerate this message');
-      return;
-    }
+      setIsSending(true);
+      try {
+        const user = useAuthStore.getState().user;
+        await providerManager.initializeProviders(user.id);
 
-    setIsSending(true);
+        const conversationMessages = messages
+          .slice(0, messageIndex)
+          .map((m) => ({ role: m.role, content: m.content }));
 
-    try {
-      const user = useAuthStore.getState().user;
-      await providerManager.initializeProviders(user.id);
+        const modelConfig = getModelConfig(selectedModel);
 
-      const conversationMessages = messages
-        .slice(0, messageIndex)
-        .map((m) => ({ role: m.role, content: m.content }));
+        const response = await providerManager.smartChat(conversationMessages, {
+          model: modelConfig?.model || null,
+          provider: modelConfig?.provider || null,
+          maxTokens: 5000,
+          temperature: 0.5,
+        });
 
-      const selectedModelData = sampleModels.find((m) => m.id === selectedModel);
-      const modelName = selectedModelData?.model || null;
+        await updateMessage(messageId, response.content);
+        toast.success('Response regenerated');
+      } catch (error) {
+        toast.error('Failed to regenerate');
+      } finally {
+        setIsSending(false);
+      }
+    },
+    [messages, selectedModel, updateMessage, getModelConfig],
+  );
 
-      const response = await providerManager.smartChat(conversationMessages, {
-        model: modelName,
-      });
+  const handleKeyPress = useCallback(
+    (e) => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        handleSend();
+      }
+    },
+    [handleSend],
+  );
 
-      await updateMessage(messageId, response.content);
-      toast.success('Response regenerated');
-    } catch (error) {
-      toast.error('Failed to regenerate response');
-    } finally {
-      setIsSending(false);
-    }
-  };
-
-  const handleKeyPress = (e) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      handleSend();
-    }
-  };
-
-  const handleTextareaChange = (e) => {
+  const handleTextareaChange = useCallback((e) => {
     setInput(e.target.value);
     e.target.style.height = 'auto';
     e.target.style.height = Math.min(e.target.scrollHeight, 200) + 'px';
-  };
+  }, []);
+
+  const visibleMessages = messages.slice(-visibleCount);
+  const hiddenCount = messages.length - visibleCount;
 
   return (
     <div className="flex h-[calc(100vh-4rem)]">
@@ -341,7 +440,7 @@ export function ChatPage() {
         </div>
       </div>
 
-      {/* Mobile Sidebar Overlay */}
+      {/* Mobile Overlay */}
       {sidebarOpen && (
         <div
           className="fixed inset-0 z-30 bg-black/50 backdrop-blur-sm lg:hidden"
@@ -364,7 +463,7 @@ export function ChatPage() {
           </div>
         </div>
 
-        {/* Messages Container */}
+        {/* Messages */}
         <div
           ref={messagesContainerRef}
           onScroll={handleScroll}
@@ -374,13 +473,22 @@ export function ChatPage() {
             <div className="flex h-full flex-col items-center justify-center text-center px-4">
               <h2 className="text-2xl font-bold tracking-tight">How can I help you today?</h2>
               <p className="mt-2 max-w-md text-sm text-muted-foreground">
-                Start a conversation with OpenAether. Your messages are saved automatically.
+                Start a conversation with OpenAether.
               </p>
             </div>
           ) : (
             <div className="max-w-4xl mx-auto py-4">
-              {messages.map((message) => (
-                <MessageBubble
+              {hiddenCount > 0 && (
+                <button
+                  onClick={() => setVisibleCount((prev) => prev + 15)}
+                  className="w-full text-center text-xs text-aether-500 hover:underline py-2"
+                >
+                  ↑ Show {Math.min(15, hiddenCount)} earlier messages
+                </button>
+              )}
+
+              {visibleMessages.map((message) => (
+                <MemoizedMessageBubble
                   key={message.id}
                   message={message}
                   onEdit={handleEditMessage}
@@ -389,15 +497,82 @@ export function ChatPage() {
                 />
               ))}
 
-              {/* Typing Indicator - Shows when AI is thinking */}
               {isSending && <TypingIndicator />}
+              {/* Manual Continue Button - shows if last message seems incomplete */}
+              {!isSending &&
+                messages.length > 0 &&
+                (() => {
+                  const lastMessage = messages[messages.length - 1];
+                  if (lastMessage?.role !== 'assistant') return null;
 
+                  const trimmed = lastMessage.content.trim();
+                  const isIncomplete = !['.', '!', '?', '```', '}', ';', ')', ':', '"'].some(
+                    (end) => trimmed.endsWith(end),
+                  );
+
+                  if (!isIncomplete) return null;
+
+                  return (
+                    <div className="flex justify-center my-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={async () => {
+                          setIsSending(true);
+                          try {
+                            const user = useAuthStore.getState().user;
+                            await providerManager.initializeProviders(user.id);
+
+                            const conversationMessages = messages.map((m) => ({
+                              role: m.role,
+                              content: m.content,
+                            }));
+
+                            const modelConfig = getModelConfig(selectedModel);
+
+                            const continuation = await providerManager.smartChat(
+                              [
+                                ...conversationMessages,
+                                {
+                                  role: 'user',
+                                  content:
+                                    'Continue exactly from where you stopped. Do not repeat.',
+                                },
+                              ],
+                              {
+                                model: modelConfig?.model || null,
+                                provider: modelConfig?.provider || null,
+                                maxTokens: 800,
+                                temperature: 0.5,
+                              },
+                            );
+
+                            if (continuation.content && continuation.content.trim()) {
+                              await sendMessage(
+                                continuation.content,
+                                'assistant',
+                                continuation.model || selectedModel,
+                              );
+                            }
+                          } catch (error) {
+                            toast.error('Failed to continue');
+                          } finally {
+                            setIsSending(false);
+                          }
+                        }}
+                      >
+                        <ArrowDown className="size-3 mr-1" />
+                        Continue Response
+                      </Button>
+                    </div>
+                  );
+                })()}
               <div ref={messagesEndRef} />
             </div>
           )}
         </div>
 
-        {/* Scroll to bottom button */}
+        {/* Scroll to bottom */}
         {showScrollButton && (
           <button
             onClick={scrollToBottom}
@@ -407,7 +582,7 @@ export function ChatPage() {
           </button>
         )}
 
-        {/* Input Area */}
+        {/* Input */}
         <div className="p-4">
           <div className="max-w-4xl mx-auto">
             <div className="rounded-2xl border bg-background shadow-md transition-colors">

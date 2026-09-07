@@ -9,39 +9,91 @@ export class GroqProvider extends BaseProvider {
       apiKey: apiKey,
       dangerouslyAllowBrowser: true,
     });
-    // Exact free models from Groq dashboard
-    this.freeModels = [
+
+    // Groq free models (enabled)
+    this.modelRotation = [
       'openai/gpt-oss-20b',
-      'openai/gpt-oss-120b',
       'groq/compound',
       'groq/compound-mini',
       'qwen/qwen3.6-27b',
-      'qwen/qwen3.8-27b',
+      'openai/gpt-oss-120b',
       'allam-2-7b',
     ];
+
+    this.failedModels = new Set();
+    this.currentModelIndex = 0;
   }
 
   async chat(messages, options = {}) {
+    let lastError;
+
+    const modelsToTry = [
+      options.model,
+      ...this.modelRotation.filter((m) => m !== options.model),
+    ].filter(Boolean);
+
+    for (const modelName of modelsToTry) {
+      if (this.failedModels.has(modelName)) continue;
+
+      try {
+        console.log(`🔵 Groq trying: ${modelName}`);
+
+        const response = await this.client.chat.completions.create({
+          messages: messages.map((m) => ({ role: m.role, content: m.content })),
+          model: modelName,
+          max_tokens: options.maxTokens || 4000,
+          temperature: options.temperature || 0.5,
+          stream: options.stream || false,
+        });
+
+        console.log(`✅ Groq succeeded with: ${modelName}`);
+        this.failedModels.delete(modelName);
+
+        return {
+          content: response.choices[0].message.content,
+          model: response.model,
+          usage: response.usage,
+        };
+      } catch (error) {
+        console.warn(`⚠️ Groq ${modelName}: ${error.message}`);
+        lastError = error;
+        this.failedModels.add(modelName);
+        continue;
+      }
+    }
+
+    throw lastError || new Error('All Groq models failed');
+  }
+
+  async streamChat(messages, options = {}, onChunk) {
+    const modelName = options.model || 'openai/gpt-oss-20b';
+
     try {
-      // Use exact model ID
-      const modelName = options.model || 'openai/gpt-oss-20b';
-
-      console.log(`🔵 Groq using model: ${modelName}`);
-
-      const response = await this.client.chat.completions.create({
+      const stream = await this.client.chat.completions.create({
         messages: messages.map((m) => ({ role: m.role, content: m.content })),
         model: modelName,
-        max_tokens: options.maxTokens || 1000,
-        temperature: options.temperature || 0.7,
+        max_tokens: options.maxTokens || 4000,
+        temperature: options.temperature || 0.5,
+        stream: true,
       });
 
+      let fullResponse = '';
+
+      for await (const chunk of stream) {
+        const content = chunk.choices?.[0]?.delta?.content || '';
+        if (content) {
+          fullResponse += content;
+          onChunk?.(fullResponse);
+        }
+      }
+
       return {
-        content: response.choices[0].message.content,
-        model: response.model,
-        usage: response.usage,
+        content: fullResponse,
+        model: modelName,
+        usage: null,
       };
     } catch (error) {
-      console.error('❌ Groq API Error:', error.message);
+      console.error('❌ Groq stream error:', error);
       throw error;
     }
   }

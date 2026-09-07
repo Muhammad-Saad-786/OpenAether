@@ -1,10 +1,16 @@
 // src/lib/providers/provider-manager.js
 import { OpenRouterProvider } from './openrouter-provider';
+import { GroqProvider } from './groq-provider';
 import { supabase } from '@/lib/supabase/client';
 
 class ProviderManager {
   constructor() {
     this.providers = new Map();
+
+    this.providerDefaultModels = {
+      openrouter: 'openai/gpt-4o-mini',
+      groq: 'openai/gpt-oss-20b',
+    };
   }
 
   async initializeProviders(userId) {
@@ -24,12 +30,21 @@ class ProviderManager {
     }
 
     apiKeys.forEach((key) => {
-      if (key.provider === 'openrouter') {
-        this.providers.set('openrouter', new OpenRouterProvider(key.api_key_encrypted));
-      }
+      this.registerProvider(key.provider, key.api_key_encrypted);
     });
 
     console.log('✅ Providers initialized:', this.getAvailableProviders());
+  }
+
+  registerProvider(providerName, apiKey) {
+    switch (providerName) {
+      case 'openrouter':
+        this.providers.set('openrouter', new OpenRouterProvider(apiKey));
+        break;
+      case 'groq':
+        this.providers.set('groq', new GroqProvider(apiKey));
+        break;
+    }
   }
 
   getAvailableProviders() {
@@ -37,32 +52,47 @@ class ProviderManager {
   }
 
   async smartChat(messages, options = {}) {
-    const provider = this.providers.get('openrouter');
+    const preferredProvider = options.provider || null;
 
-    if (!provider) {
-      throw new Error('OpenRouter API key not configured. Please add your key in Settings.');
+    // Priority: OpenRouter first (quality), then Groq (reliability)
+    let providerChain = [];
+
+    if (preferredProvider && this.providers.has(preferredProvider)) {
+      providerChain.push(preferredProvider);
     }
 
-    try {
-      console.log('🔄 Using OpenRouter...');
+    // Add all available providers with priority
+    const priorityOrder = ['openrouter', 'groq'];
+    const available = this.getAvailableProviders().sort(
+      (a, b) => priorityOrder.indexOf(a) - priorityOrder.indexOf(b),
+    );
 
-      const response = await provider.chat(messages, options);
+    providerChain.push(...available);
+    providerChain = [...new Set(providerChain)];
 
-      console.log('✅ OpenRouter succeeded');
+    const errors = [];
 
-      return {
-        ...response,
-        provider: 'openrouter',
-      };
-    } catch (error) {
-      console.error('❌ OpenRouter failed:', error.message);
+    for (const providerName of providerChain) {
+      if (!this.providers.has(providerName)) continue;
 
-      if (error.status === 429 || error.message.includes('429')) {
-        throw new Error('Rate limited. Please wait a moment and try again.');
+      try {
+        console.log(`🔄 Trying ${providerName}...`);
+
+        const response = await this.chat(providerName, messages, options);
+
+        console.log(`✅ ${providerName} succeeded`);
+        return {
+          ...response,
+          provider: providerName,
+        };
+      } catch (error) {
+        console.warn(`❌ ${providerName}: ${error.message}`);
+        errors.push({ provider: providerName, error: error.message });
+        continue;
       }
-
-      throw new Error(`OpenRouter error: ${error.message}`);
     }
+
+    throw new Error(`All providers failed: ${errors.map((e) => e.provider).join(', ')}`);
   }
 
   async chat(providerName, messages, options = {}) {

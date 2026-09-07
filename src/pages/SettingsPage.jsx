@@ -14,7 +14,6 @@ import {
   CheckCircle,
   Loader2,
   Upload,
-  X,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -34,7 +33,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useAuthStore } from '@/stores/authStore';
 import { useChatStore } from '@/stores/chatStore';
 import { supabase } from '@/lib/supabase/client';
-import { OpenRouterLogo } from '@/components/icons/ProviderLogos';
+import { OpenRouterLogo, GroqLogo } from '@/components/icons/ProviderLogos';
 import { toast } from 'sonner';
 
 const tabs = [
@@ -43,11 +42,33 @@ const tabs = [
   { id: 'privacy', label: 'Data & Privacy', icon: Database },
 ];
 
+// Provider configurations
+const providers = [
+  {
+    id: 'openrouter',
+    name: 'OpenRouter',
+    description: 'Access to multiple free AI models',
+    url: 'https://openrouter.ai',
+    logo: OpenRouterLogo,
+    keyPrefix: 'sk-or-',
+    freeModels: ['GPT-4o Mini', 'Gemma 26B', 'Gemma 31B', 'GLM 5.2'],
+  },
+  {
+    id: 'groq',
+    name: 'Groq',
+    description: 'Lightning-fast inference with generous free tier',
+    url: 'https://console.groq.com',
+    logo: GroqLogo,
+    keyPrefix: 'gsk_',
+    freeModels: ['GPT-OSS 20B', 'GPT-OSS 120B', 'Groq Compound', 'Qwen 3.6'],
+  },
+];
+
 export function SettingsPage() {
   const [activeTab, setActiveTab] = useState('profile');
   const [showKeys, setShowKeys] = useState({});
   const [newKeys, setNewKeys] = useState({});
-  const [testingKey, setTestingKey] = useState(false);
+  const [testingKey, setTestingKey] = useState(null);
   const [profile, setProfile] = useState({
     username: '',
     email: '',
@@ -79,13 +100,11 @@ export function SettingsPage() {
     const file = e.target.files?.[0];
     if (!file || !user) return;
 
-    // Validate file type
     if (!file.type.startsWith('image/')) {
       toast.error('Please upload an image file');
       return;
     }
 
-    // Validate file size (max 2MB)
     if (file.size > 2 * 1024 * 1024) {
       toast.error('Image must be less than 2MB');
       return;
@@ -93,23 +112,16 @@ export function SettingsPage() {
 
     setUploadingAvatar(true);
     try {
-      // Upload to Supabase Storage
       const fileExt = file.name.split('.').pop();
       const fileName = `${user.id}-${Date.now()}.${fileExt}`;
       const filePath = `avatars/${fileName}`;
 
-      const { error: uploadError } = await supabase.storage
-        .from('avatars')
-        .upload(filePath, file);
+      const { error: uploadError } = await supabase.storage.from('avatars').upload(filePath, file);
 
       if (uploadError) throw uploadError;
 
-      // Get public URL
-      const { data: publicUrl } = supabase.storage
-        .from('avatars')
-        .getPublicUrl(filePath);
+      const { data: publicUrl } = supabase.storage.from('avatars').getPublicUrl(filePath);
 
-      // Update user metadata
       const { error: updateError } = await supabase.auth.updateUser({
         data: { avatar_url: publicUrl.publicUrl },
       });
@@ -133,51 +145,52 @@ export function SettingsPage() {
     }
 
     try {
-      console.log('📝 Updating username to:', profile.username.trim());
-
       await updateProfile({
         username: profile.username.trim(),
       });
 
-      // Refresh user data
-      const { data: { user: refreshedUser }, error: refreshError } = await supabase.auth.getUser();
+      const {
+        data: { user: refreshedUser },
+        error: refreshError,
+      } = await supabase.auth.getUser();
       if (refreshError) throw refreshError;
 
-      // Update auth store with refreshed user
       useAuthStore.setState({ user: refreshedUser });
-
       toast.success('Profile updated successfully!');
     } catch (error) {
-      console.error('❌ Profile update failed:', error);
-      toast.error('Failed to update profile: ' + error.message);
+      console.error('Profile update failed:', error);
+      toast.error('Failed to update profile');
     }
   };
 
-  const handleSaveKey = async (provider) => {
-    const apiKey = newKeys[provider];
+  // Save API key with provider-specific validation
+  const handleSaveKey = async (providerId) => {
+    const apiKey = newKeys[providerId];
+    const providerConfig = providers.find((p) => p.id === providerId);
+
     if (!apiKey) {
       toast.error('Please enter an API key');
       return;
     }
 
-    if (!apiKey.startsWith('sk-or-')) {
-      toast.error('Invalid OpenRouter key. Should start with sk-or-');
+    if (!apiKey.startsWith(providerConfig.keyPrefix)) {
+      toast.error(`${providerConfig.name} key should start with ${providerConfig.keyPrefix}`);
       return;
     }
 
     try {
-      await saveApiKey(provider, apiKey);
-      toast.success('API key saved!');
-      setNewKeys((prev) => ({ ...prev, [provider]: '' }));
+      await saveApiKey(providerId, apiKey);
+      toast.success(`${providerConfig.name} API key saved!`);
+      setNewKeys((prev) => ({ ...prev, [providerId]: '' }));
       loadApiKeys();
     } catch (error) {
-      toast.error('Failed to save API key');
+      toast.error(`Failed to save ${providerConfig.name} API key`);
     }
   };
 
-  const handleDeleteKey = async (provider) => {
+  const handleDeleteKey = async (providerId) => {
     try {
-      await deleteApiKey(provider);
+      await deleteApiKey(providerId);
       toast.success('API key deleted');
       loadApiKeys();
     } catch (error) {
@@ -185,9 +198,9 @@ export function SettingsPage() {
     }
   };
 
-  const handleToggleKey = async (provider, isActive) => {
+  const handleToggleKey = async (providerId, isActive) => {
     try {
-      await updateApiKeyStatus(provider, isActive);
+      await updateApiKeyStatus(providerId, isActive);
       toast.success(`API key ${isActive ? 'activated' : 'deactivated'}`);
       loadApiKeys();
     } catch (error) {
@@ -195,30 +208,41 @@ export function SettingsPage() {
     }
   };
 
-  const handleTestKey = async () => {
-    const savedKey = apiKeys.find((k) => k.provider === 'openrouter');
+  // Test API key for specific provider
+  const handleTestKey = async (providerId) => {
+    const savedKey = apiKeys.find((k) => k.provider === providerId);
     if (!savedKey) {
       toast.error('No API key found');
       return;
     }
 
-    setTestingKey(true);
+    setTestingKey(providerId);
     try {
-      const response = await fetch('https://openrouter.ai/api/v1/models', {
-        headers: {
-          Authorization: `Bearer ${savedKey.api_key_encrypted}`,
-        },
-      });
+      let response;
 
-      if (response.ok) {
-        toast.success('API key is valid and working!');
+      if (providerId === 'openrouter') {
+        response = await fetch('https://openrouter.ai/api/v1/models', {
+          headers: {
+            Authorization: `Bearer ${savedKey.api_key_encrypted}`,
+          },
+        });
+      } else if (providerId === 'groq') {
+        response = await fetch('https://api.groq.com/openai/v1/models', {
+          headers: {
+            Authorization: `Bearer ${savedKey.api_key_encrypted}`,
+          },
+        });
+      }
+
+      if (response && response.ok) {
+        toast.success(`${providers.find((p) => p.id === providerId)?.name} API key is valid!`);
       } else {
-        toast.error(`API key invalid (${response.status})`);
+        toast.error(`API key invalid (${response?.status || 'unknown'})`);
       }
     } catch (error) {
       toast.error('Failed to test API key');
     } finally {
-      setTestingKey(false);
+      setTestingKey(null);
     }
   };
 
@@ -235,7 +259,6 @@ export function SettingsPage() {
       const conversationIds = conversations?.map((c) => c.id) || [];
 
       if (conversationIds.length > 0) {
-        // Delete all messages in these conversations
         const { error: messagesError } = await supabase
           .from('messages')
           .delete()
@@ -243,7 +266,6 @@ export function SettingsPage() {
 
         if (messagesError) throw messagesError;
 
-        // Delete conversations
         const { error: conversationsError } = await supabase
           .from('conversations')
           .delete()
@@ -256,7 +278,6 @@ export function SettingsPage() {
         toast.info('No chat history to clear');
       }
 
-      // Reload conversations
       await loadConversations();
     } catch (error) {
       console.error('Clear history error:', error);
@@ -273,10 +294,6 @@ export function SettingsPage() {
 
     setDeletingAccount(true);
     try {
-      // Delete all user data
-      const { error: deleteError } = await supabase.auth.admin.deleteUser(user.id);
-
-      // Sign out
       await logout();
       toast.success('Account deleted successfully');
       window.location.href = '/';
@@ -398,104 +415,118 @@ export function SettingsPage() {
                   </p>
                 </div>
 
-                <div className="rounded-xl border p-6">
-                  <div className="mb-4 flex items-center gap-4">
-                    <div className="flex size-12 items-center justify-center rounded-xl bg-muted p-2">
-                      <OpenRouterLogo className="size-8" />
-                    </div>
-                    <div className="flex-1">
-                      <h3 className="font-semibold">OpenRouter</h3>
-                      <p className="text-sm text-muted-foreground">
-                        Access to multiple free AI models
-                      </p>
-                    </div>
-                    <a
-                      href="https://openrouter.ai"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-sm text-aether-500 hover:underline"
-                    >
-                      Get Key →
-                    </a>
-                  </div>
+                {/* Render all providers */}
+                {providers.map((provider) => {
+                  const ProviderLogo = provider.logo;
+                  const savedKey = apiKeys.find((k) => k.provider === provider.id);
 
-                  {apiKeys.find((k) => k.provider === 'openrouter') ? (
-                    <div className="space-y-3">
-                      <div className="flex items-center gap-2">
-                        <div className="flex-1 rounded-lg bg-muted px-3 py-2 text-sm font-mono">
-                          {showKeys['openrouter']
-                            ? apiKeys.find((k) => k.provider === 'openrouter')?.api_key_encrypted
-                            : '••••••••••••••••••••'}
+                  return (
+                    <div key={provider.id} className="rounded-xl border p-6">
+                      <div className="mb-4 flex items-center gap-4">
+                        <div className="flex size-12 items-center justify-center rounded-xl bg-muted p-2">
+                          <ProviderLogo className="size-8" />
                         </div>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() =>
-                            setShowKeys((prev) => ({
-                              ...prev,
-                              openrouter: !prev['openrouter'],
-                            }))
-                          }
+                        <div className="flex-1">
+                          <h3 className="font-semibold">{provider.name}</h3>
+                          <p className="text-sm text-muted-foreground">{provider.description}</p>
+                          <div className="mt-1 flex flex-wrap gap-1">
+                            {provider.freeModels.map((model) => (
+                              <span
+                                key={model}
+                                className="rounded-md bg-muted px-2 py-0.5 text-xs text-muted-foreground"
+                              >
+                                {model}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                        <a
+                          href={provider.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-sm text-aether-500 hover:underline shrink-0"
                         >
-                          {showKeys['openrouter'] ? (
-                            <EyeOff className="size-4" />
-                          ) : (
-                            <Eye className="size-4" />
-                          )}
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleDeleteKey('openrouter')}
-                        >
-                          <Trash2 className="size-4 text-red-500" />
-                        </Button>
+                          Get Key →
+                        </a>
                       </div>
 
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm text-muted-foreground">
-                            {apiKeys.find((k) => k.provider === 'openrouter')?.is_active
-                              ? 'Active'
-                              : 'Inactive'}
-                          </span>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={handleTestKey}
-                            disabled={testingKey}
-                          >
-                            {testingKey ? (
-                              <Loader2 className="size-4 animate-spin" />
-                            ) : (
-                              <CheckCircle className="size-4" />
-                            )}
-                            Test
+                      {savedKey ? (
+                        <div className="space-y-3">
+                          <div className="flex items-center gap-2">
+                            <div className="flex-1 rounded-lg bg-muted px-3 py-2 text-sm font-mono">
+                              {showKeys[provider.id]
+                                ? savedKey.api_key_encrypted
+                                : '••••••••••••••••••••'}
+                            </div>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() =>
+                                setShowKeys((prev) => ({
+                                  ...prev,
+                                  [provider.id]: !prev[provider.id],
+                                }))
+                              }
+                            >
+                              {showKeys[provider.id] ? (
+                                <EyeOff className="size-4" />
+                              ) : (
+                                <Eye className="size-4" />
+                              )}
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => handleDeleteKey(provider.id)}
+                            >
+                              <Trash2 className="size-4 text-red-500" />
+                            </Button>
+                          </div>
+
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <span className="text-sm text-muted-foreground">
+                                {savedKey.is_active ? 'Active' : 'Inactive'}
+                              </span>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleTestKey(provider.id)}
+                                disabled={testingKey === provider.id}
+                              >
+                                {testingKey === provider.id ? (
+                                  <Loader2 className="size-4 animate-spin" />
+                                ) : (
+                                  <CheckCircle className="size-4" />
+                                )}
+                                Test
+                              </Button>
+                            </div>
+                            <Switch
+                              checked={savedKey.is_active}
+                              onCheckedChange={(checked) => handleToggleKey(provider.id, checked)}
+                            />
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="flex gap-2">
+                          <Input
+                            type="password"
+                            placeholder={`Enter ${provider.name} API key (${provider.keyPrefix}...)`}
+                            value={newKeys[provider.id] || ''}
+                            onChange={(e) =>
+                              setNewKeys((prev) => ({ ...prev, [provider.id]: e.target.value }))
+                            }
+                          />
+                          <Button variant="gradient" onClick={() => handleSaveKey(provider.id)}>
+                            <Plus className="mr-2 size-4" />
+                            Save
                           </Button>
                         </div>
-                        <Switch
-                          checked={apiKeys.find((k) => k.provider === 'openrouter')?.is_active}
-                          onCheckedChange={(checked) => handleToggleKey('openrouter', checked)}
-                        />
-                      </div>
+                      )}
                     </div>
-                  ) : (
-                    <div className="flex gap-2">
-                      <Input
-                        type="password"
-                        placeholder="Enter OpenRouter API key (sk-or-...)"
-                        value={newKeys['openrouter'] || ''}
-                        onChange={(e) =>
-                          setNewKeys((prev) => ({ ...prev, openrouter: e.target.value }))
-                        }
-                      />
-                      <Button variant="gradient" onClick={() => handleSaveKey('openrouter')}>
-                        <Plus className="mr-2 size-4" />
-                        Save
-                      </Button>
-                    </div>
-                  )}
-                </div>
+                  );
+                })}
               </div>
             )}
 
@@ -554,8 +585,8 @@ export function SettingsPage() {
           <DialogHeader>
             <DialogTitle className="text-red-500">Delete Account</DialogTitle>
             <DialogDescription>
-              This action cannot be undone. All your data will be permanently deleted.
-              Type your email to confirm:
+              This action cannot be undone. All your data will be permanently deleted. Type your
+              email to confirm:
             </DialogDescription>
           </DialogHeader>
           <Input
