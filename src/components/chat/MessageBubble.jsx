@@ -17,7 +17,7 @@ import { Button } from '@/components/ui/button';
 import { MarkdownRenderer } from './MarkdownRenderer';
 import { cn } from '@/lib/utils';
 
-export function MessageBubble({ message, onEdit, onDelete, onRegenerate }) {
+export function MessageBubble({ message, onEdit, onDelete, onRegenerate, isStreaming = false }) {
   const [copied, setCopied] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editedContent, setEditedContent] = useState(message.content);
@@ -98,7 +98,10 @@ export function MessageBubble({ message, onEdit, onDelete, onRegenerate }) {
 
       {/* Message Content */}
       <div
-        className={cn('flex-1 max-w-[80%]', message.role === 'user' ? 'text-right' : 'text-left')}
+        className={cn(
+          'min-w-0 max-w-[80%] overflow-hidden wrap-break-word',
+          message.role === 'user' ? 'text-right' : 'text-left',
+        )}
       >
         {isEditing ? (
           /* Edit Mode - Clean, no border */
@@ -144,7 +147,7 @@ export function MessageBubble({ message, onEdit, onDelete, onRegenerate }) {
           /* Normal Display */
           <div
             className={cn(
-              'rounded-2xl px-4 py-3 inline-block text-left',
+              'inline-block max-w-full rounded-2xl px-4 py-3 text-left',
               message.role === 'user'
                 ? 'bg-gradient-to-r from-aether-500 to-aether-400 text-white'
                 : 'bg-card border',
@@ -152,8 +155,15 @@ export function MessageBubble({ message, onEdit, onDelete, onRegenerate }) {
           >
             {message.role === 'user' ? (
               <p className="whitespace-pre-wrap">{message.content}</p>
-            ) : (
+            ) : message.content && isStreaming ? (
+              <p className="whitespace-pre-wrap wrap-break-word">{message.content}</p>
+            ) : message.content ? (
               <MarkdownRenderer content={message.content} />
+            ) : (
+              <span className="inline-block size-2.5 animate-pulse rounded-full bg-aether-500" />
+            )}
+            {isStreaming && message.content && (
+              <span className="ml-1 inline-block size-2 align-middle animate-pulse rounded-full bg-aether-500" />
             )}
           </div>
         )}

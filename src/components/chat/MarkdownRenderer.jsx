@@ -4,11 +4,39 @@ import remarkGfm from 'remark-gfm';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { oneDark, oneLight } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import { Copy, Check } from 'lucide-react';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
+
+const TINY_CODE_MAX_LENGTH = 60;
+
+function getFenceContent(code, indent) {
+  const lines = code.replace(/\r\n/g, '\n').split('\n');
+  if (lines.length !== 1) return null;
+
+  const line = lines[0].startsWith(indent) ? lines[0].slice(indent.length) : lines[0];
+  if (!line || /^\s/.test(line) || line.length > TINY_CODE_MAX_LENGTH) return null;
+  if (line.includes('`') || /[{}]/.test(line)) return null;
+
+  return line;
+}
+
+/** Convert only genuinely tiny fenced fragments to inline Markdown code. */
+export function preprocessMarkdown(markdown) {
+  if (!markdown || !markdown.includes('```')) return markdown || '';
+
+  return markdown.replace(
+    /^(?<indent>[ \t]*)```[^\r\n`]*\r?\n(?<code>[\s\S]*?)\r?\n\k<indent>```[ \t]*(?=\r?$)/gm,
+    (match, indent, code, _offset, _source, groups) => {
+      const inlineCode = getFenceContent(code, indent);
+      if (!inlineCode) return match;
+      return `${groups.indent}\`${inlineCode}\``;
+    },
+  );
+}
 
 export function MarkdownRenderer({ content }) {
   const [copiedCode, setCopiedCode] = useState(null);
   const isDark = document.documentElement.classList.contains('dark');
+  const preparedContent = useMemo(() => preprocessMarkdown(content), [content]);
 
   const handleCopyCode = (code) => {
     navigator.clipboard.writeText(code);
@@ -17,7 +45,7 @@ export function MarkdownRenderer({ content }) {
   };
 
   return (
-    <div className="markdown-content">
+    <div className="markdown-content min-w-0 max-w-full wrap-break-word">
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
         components={{
@@ -28,7 +56,7 @@ export function MarkdownRenderer({ content }) {
 
             if (!inline && match) {
               return (
-                <div className="relative group my-4">
+                <div className="relative group my-4 max-w-full overflow-x-auto">
                   <div className="flex items-center justify-between bg-muted px-4 py-2 rounded-t-lg border border-b-0">
                     <span className="text-xs font-medium text-muted-foreground">{match[1]}</span>
                     <button
@@ -49,6 +77,8 @@ export function MarkdownRenderer({ content }) {
                     PreTag="div"
                     customStyle={{
                       margin: 0,
+                      maxWidth: '100%',
+                      overflowX: 'auto',
                       borderRadius: '0 0 8px 8px',
                       fontSize: '14px',
                     }}
@@ -62,7 +92,7 @@ export function MarkdownRenderer({ content }) {
 
             if (!inline) {
               return (
-                <div className="relative group my-4">
+                <div className="relative group my-4 max-w-full overflow-x-auto">
                   <div className="flex items-center justify-between bg-muted px-4 py-2 rounded-t-lg border border-b-0">
                     <span className="text-xs font-medium text-muted-foreground">Code</span>
                     <button
@@ -82,6 +112,8 @@ export function MarkdownRenderer({ content }) {
                     PreTag="div"
                     customStyle={{
                       margin: 0,
+                      maxWidth: '100%',
+                      overflowX: 'auto',
                       borderRadius: '0 0 8px 8px',
                       fontSize: '14px',
                     }}
@@ -145,7 +177,7 @@ export function MarkdownRenderer({ content }) {
           hr: () => <hr className="my-4 border-border" />,
         }}
       >
-        {content}
+        {preparedContent}
       </ReactMarkdown>
     </div>
   );

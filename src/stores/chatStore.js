@@ -21,7 +21,9 @@ export const useChatStore = create((set, get) => ({
   conversations: [],
   currentConversation: null,
   messages: [],
+  messagesByConversation: {},
   loading: false,
+  preloadPromise: null,
 
   // Load all conversations for current user
   loadConversations: async () => {
@@ -43,6 +45,58 @@ export const useChatStore = create((set, get) => ({
     } finally {
       set({ loading: false });
     }
+  },
+
+  preloadAllData: async () => {
+    const user = useAuthStore.getState().user;
+    if (!user) return;
+
+    const existingPromise = get().preloadPromise;
+    if (existingPromise) return existingPromise;
+
+    const preloadPromise = (async () => {
+      set({ loading: true });
+      try {
+        const [
+          { data: conversations, error: conversationsError },
+          { data: allMessages, error: messagesError },
+        ] = await Promise.all([
+          supabase
+            .from('conversations')
+            .select('*')
+            .eq('user_id', user.id)
+            .order('updated_at', { ascending: false }),
+          supabase
+            .from('messages')
+            .select('*')
+            .eq('user_id', user.id)
+            .order('created_at', { ascending: true }),
+        ]);
+
+        if (conversationsError) throw conversationsError;
+        if (messagesError) throw messagesError;
+
+        const messagesByConversation = (allMessages || []).reduce((cache, message) => {
+          if (!cache[message.conversation_id]) cache[message.conversation_id] = [];
+          cache[message.conversation_id].push(message);
+          return cache;
+        }, {});
+
+        set({
+          conversations: conversations || [],
+          messagesByConversation,
+          loading: false,
+        });
+      } catch (error) {
+        console.error('Error preloading chat data:', error);
+        set({ loading: false });
+      } finally {
+        set({ preloadPromise: null });
+      }
+    })();
+
+    set({ preloadPromise });
+    return preloadPromise;
   },
 
   // Create new conversation with auto-generated title
@@ -104,15 +158,15 @@ export const useChatStore = create((set, get) => ({
 
   // Set current conversation
   setCurrentConversation: (conversation) => {
-    // Set current conversation
-    set({ currentConversation: conversation });
+    const cachedMessages = conversation?.id ? get().messagesByConversation[conversation.id] : null;
+    set({
+      currentConversation: conversation,
+      messages: cachedMessages || [],
+    });
 
-    // Handle messages based on conversation
-    if (conversation && conversation.id) {
+    // Fetch only when this conversation was not included in the preload cache.
+    if (conversation?.id && !cachedMessages) {
       get().loadMessages(conversation.id);
-    } else {
-      // Clear messages if no conversation
-      set({ messages: [] });
     }
   },
 
@@ -127,7 +181,13 @@ export const useChatStore = create((set, get) => ({
         .order('created_at', { ascending: true });
 
       if (error) throw error;
-      set({ messages: data || [] });
+      set((state) => ({
+        messages: data || [],
+        messagesByConversation: {
+          ...state.messagesByConversation,
+          [conversationId]: data || [],
+        },
+      }));
     } catch (error) {
       console.error('Error loading messages:', error);
     } finally {
@@ -160,6 +220,13 @@ export const useChatStore = create((set, get) => ({
 
     set((state) => ({
       messages: [...state.messages, data],
+      messagesByConversation: {
+        ...state.messagesByConversation,
+        [currentConversation.id]: [
+          ...(state.messagesByConversation[currentConversation.id] || []),
+          data,
+        ],
+      },
     }));
 
     // Update conversation timestamp
@@ -192,10 +259,24 @@ export const useChatStore = create((set, get) => ({
 
     set((state) => ({
       messages: state.messages.filter((m) => m.id !== messageId),
+      messagesByConversation: Object.fromEntries(
+        Object.entries(state.messagesByConversation).map(([conversationId, cachedMessages]) => [
+          conversationId,
+          cachedMessages.filter((message) => message.id !== messageId),
+        ]),
+      ),
     }));
   },
 
   // Update message
+  updateMessageLocal: (messageId, newContent) => {
+    set((state) => ({
+      messages: state.messages.map((message) =>
+        message.id === messageId ? { ...message, content: newContent } : message,
+      ),
+    }));
+  },
+
   updateMessage: async (messageId, newContent) => {
     console.log('📝 Updating message:', messageId, 'with:', newContent);
 
@@ -216,6 +297,12 @@ export const useChatStore = create((set, get) => ({
 
       set((state) => ({
         messages: state.messages.map((m) => (m.id === messageId ? data : m)),
+        messagesByConversation: Object.fromEntries(
+          Object.entries(state.messagesByConversation).map(([conversationId, cachedMessages]) => [
+            conversationId,
+            cachedMessages.map((message) => (message.id === messageId ? data : message)),
+          ]),
+        ),
       }));
 
       return data;

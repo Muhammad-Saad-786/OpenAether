@@ -66,35 +66,44 @@ export class GroqProvider extends BaseProvider {
   }
 
   async streamChat(messages, options = {}, onChunk) {
-    const modelName = options.model || 'openai/gpt-oss-20b';
+    let lastError;
+    const modelsToTry = [
+      options.model,
+      ...this.modelRotation.filter((m) => m !== options.model),
+    ].filter(Boolean);
 
-    try {
-      const stream = await this.client.chat.completions.create({
-        messages: messages.map((m) => ({ role: m.role, content: m.content })),
-        model: modelName,
-        max_tokens: options.maxTokens || 4000,
-        temperature: options.temperature || 0.5,
-        stream: true,
-      });
+    for (const modelName of modelsToTry) {
+      if (this.failedModels.has(modelName)) continue;
 
-      let fullResponse = '';
+      try {
+        const stream = await this.client.chat.completions.create({
+          messages: messages.map((m) => ({ role: m.role, content: m.content })),
+          model: modelName,
+          max_tokens: options.maxTokens || 4000,
+          temperature: options.temperature ?? 0.5,
+          stream: true,
+        });
 
-      for await (const chunk of stream) {
-        const content = chunk.choices?.[0]?.delta?.content || '';
-        if (content) {
-          fullResponse += content;
-          onChunk?.(fullResponse);
+        let fullResponse = '';
+        let finishReason = null;
+        for await (const chunk of stream) {
+          const content = chunk.choices?.[0]?.delta?.content || '';
+          finishReason = chunk.choices?.[0]?.finish_reason || finishReason;
+          if (content) {
+            fullResponse += content;
+            onChunk?.(fullResponse);
+          }
         }
-      }
 
-      return {
-        content: fullResponse,
-        model: modelName,
-        usage: null,
-      };
-    } catch (error) {
-      console.error('❌ Groq stream error:', error);
-      throw error;
+        this.failedModels.delete(modelName);
+        return { content: fullResponse, model: modelName, finishReason, usage: null };
+      } catch (error) {
+        console.warn(`⚠️ Groq stream ${modelName}: ${error.message}`);
+        lastError = error;
+        this.failedModels.add(modelName);
+      }
     }
+
+    throw lastError || new Error('All Groq streaming models failed');
   }
 }

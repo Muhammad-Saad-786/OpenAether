@@ -17,9 +17,8 @@ import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
 import { useChatStore } from '@/stores/chatStore';
 import { useAuthStore } from '@/stores/authStore';
-import { providerManager } from '@/lib/providers/provider-manager';
+import { formatResponse, providerManager } from '@/lib/providers/provider-manager';
 import { MessageBubble } from '@/components/chat/MessageBubble';
-import { TypingIndicator } from '@/components/chat/TypingIndicator';
 import { toast } from 'sonner';
 
 const sampleModels = [
@@ -44,12 +43,12 @@ const sampleModels = [
     model: 'minimax/minimax-m3:free',
     provider: 'openrouter',
   },
-  { id: 'groq-gptoss20', name: 'GPT-OSS 20B ⚡', model: 'openai/gpt-oss-20b', provider: 'groq' },
-  { id: 'groq-gptoss120', name: 'GPT-OSS 120B 🧠', model: 'openai/gpt-oss-120b', provider: 'groq' },
-  { id: 'groq-compound', name: 'Groq Compound 🤖', model: 'groq/compound', provider: 'groq' },
+  { id: 'groq-gptoss20', name: 'GPT-OSS 20B ', model: 'openai/gpt-oss-20b', provider: 'groq' },
+  { id: 'groq-gptoss120', name: 'GPT-OSS 120B ', model: 'openai/gpt-oss-120b', provider: 'groq' },
+  { id: 'groq-compound', name: 'Groq Compound ', model: 'groq/compound', provider: 'groq' },
   {
     id: 'groq-compound-mini',
-    name: 'Compound Mini ⚡',
+    name: 'Compound Mini ',
     model: 'groq/compound-mini',
     provider: 'groq',
   },
@@ -72,6 +71,7 @@ export function ChatPage() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [showScrollButton, setShowScrollButton] = useState(false);
   const [visibleCount, setVisibleCount] = useState(15);
+  const [streamingMessageId, setStreamingMessageId] = useState(null);
 
   const messagesEndRef = useRef(null);
   const messagesContainerRef = useRef(null);
@@ -83,10 +83,10 @@ export function ChatPage() {
     conversations,
     currentConversation,
     messages,
-    loadConversations,
     createConversation,
     setCurrentConversation,
     sendMessage,
+    updateMessageLocal,
     deleteConversation,
     deleteMessage,
     updateMessage,
@@ -97,10 +97,7 @@ export function ChatPage() {
       navigate('/login');
       return;
     }
-    if (isAuthenticated) {
-      loadConversations();
-    }
-  }, [isAuthenticated, loading, navigate, loadConversations]);
+  }, [isAuthenticated, loading, navigate]);
 
   const scrollToBottom = useCallback(() => {
     requestAnimationFrame(() => {
@@ -185,9 +182,8 @@ export function ChatPage() {
     try {
       await providerManager.initializeProviders(user.id);
 
-      let conversation = currentConversation;
-      if (!conversation) {
-        conversation = await createConversation(null, selectedModel, null, userMessage);
+      if (!currentConversation) {
+        await createConversation(null, selectedModel, null, userMessage);
       }
 
       await sendMessage(userMessage, 'user', selectedModel);
@@ -198,62 +194,66 @@ export function ChatPage() {
       }));
 
       const modelConfig = getModelConfig(selectedModel);
+      const assistantMessage = await sendMessage('', 'assistant', selectedModel);
+      setStreamingMessageId(assistantMessage.id);
+      let streamUpdateTimer = null;
+      let latestStreamContent = '';
+      let accumulatedContent = '';
 
-      // FIRST RESPONSE
-      const response = await providerManager.smartChat(conversationMessages, {
+      const updateStreamPreview = (content) => {
+        latestStreamContent = content;
+        if (streamUpdateTimer) return;
+
+        streamUpdateTimer = setTimeout(() => {
+          updateMessageLocal(assistantMessage.id, latestStreamContent);
+          streamUpdateTimer = null;
+        }, 80);
+      };
+
+      const streamOptions = {
         model: modelConfig?.model || null,
         provider: modelConfig?.provider || null,
         maxTokens: 5000,
         temperature: 0.5,
-      });
+      };
+      const maxContinuationSegments = 8;
+      let response;
 
-      // Save first response and get the saved message
-      const savedMessage = await sendMessage(
-        response.content,
-        'assistant',
-        response.model || selectedModel,
-      );
+      for (let segment = 0; segment < maxContinuationSegments; segment += 1) {
+        const segmentStart = accumulatedContent;
+        response = await providerManager.streamChat(
+          segment === 0
+            ? conversationMessages
+            : [
+                ...conversationMessages,
+                { role: 'assistant', content: accumulatedContent },
+                {
+                  role: 'user',
+                  content:
+                    'Continue the requested project from the next missing file or section. Do not repeat any completed code. Output only the continuation and finish all remaining requirements.',
+                },
+              ],
+          streamOptions,
+          (content) => updateStreamPreview(segmentStart + content),
+        );
 
-      // CHECK IF RESPONSE IS INCOMPLETE
-      const trimmed = response.content.trim();
-      const endsWithComplete = ['.', '!', '?', '```', '}', ';', ')', ':', '"', "'"].some((end) =>
-        trimmed.endsWith(end),
-      );
+        accumulatedContent += response.content;
+        updateMessageLocal(assistantMessage.id, accumulatedContent);
 
-      // Also check if it looks like code was cut off
-      const looksCutOff = trimmed.includes('=>') && !trimmed.includes('}');
-
-      if (!endsWithComplete || looksCutOff) {
-        toast.info('Continuing response...');
-
-        // CONTINUE WITH CONTEXT
-        const continueMessages = [
-          ...conversationMessages,
-          { role: 'assistant', content: response.content },
-          {
-            role: 'user',
-            content:
-              'Continue exactly from where you stopped. Do not repeat anything. Complete the code/explanation.',
-          },
-        ];
-
-        const continuation = await providerManager.smartChat(continueMessages, {
-          model: modelConfig?.model || null,
-          provider: modelConfig?.provider || null,
-          maxTokens: 800,
-          temperature: 0.5,
-        });
-
-        if (continuation.content && continuation.content.trim()) {
-          // Update the SAME message with combined content
-          const fullContent = response.content + '\n' + continuation.content;
-          await updateMessage(savedMessage.id, fullContent);
-        }
+        if (response.finishReason !== 'length') break;
       }
+
+      if (streamUpdateTimer) clearTimeout(streamUpdateTimer);
+      const finalContent = formatResponse(accumulatedContent);
+      if (!finalContent) throw new Error('The model returned an empty response');
+
+      await updateMessage(assistantMessage.id, finalContent);
+      setStreamingMessageId(null);
     } catch (error) {
       console.error('Error:', error);
       toast.error(error.message || 'Failed to get AI response');
     } finally {
+      setStreamingMessageId(null);
       setIsSending(false);
     }
   }, [
@@ -265,6 +265,7 @@ export function ChatPage() {
     sendMessage,
     updateMessage,
     getModelConfig,
+    updateMessageLocal,
   ]);
 
   const handleEditMessage = useCallback(
@@ -449,7 +450,7 @@ export function ChatPage() {
       )}
 
       {/* Main Chat Area */}
-      <div className="flex flex-1 flex-col">
+      <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
         {/* Header */}
         <div className="relative flex items-center justify-center px-4 py-3">
           <button
@@ -467,7 +468,7 @@ export function ChatPage() {
         <div
           ref={messagesContainerRef}
           onScroll={handleScroll}
-          className="flex-1 overflow-y-auto px-4"
+          className="min-w-0 flex-1 overflow-x-hidden overflow-y-auto px-4"
         >
           {messages.length === 0 && !isSending ? (
             <div className="flex h-full flex-col items-center justify-center text-center px-4">
@@ -477,7 +478,7 @@ export function ChatPage() {
               </p>
             </div>
           ) : (
-            <div className="max-w-4xl mx-auto py-4">
+            <div className="mx-auto min-w-0 max-w-4xl py-4">
               {hiddenCount > 0 && (
                 <button
                   onClick={() => setVisibleCount((prev) => prev + 15)}
@@ -494,10 +495,9 @@ export function ChatPage() {
                   onEdit={handleEditMessage}
                   onDelete={handleDeleteMessage}
                   onRegenerate={handleRegenerate}
+                  isStreaming={message.id === streamingMessageId}
                 />
               ))}
-
-              {isSending && <TypingIndicator />}
               {/* Manual Continue Button - shows if last message seems incomplete */}
               {!isSending &&
                 messages.length > 0 &&
@@ -591,7 +591,7 @@ export function ChatPage() {
                 value={input}
                 onChange={handleTextareaChange}
                 onKeyPress={handleKeyPress}
-                placeholder="Message OpenAether..."
+                placeholder="Ask OpenAether..."
                 className="w-full resize-none bg-transparent px-4 pt-3 pb-2 text-sm outline-none placeholder:text-muted-foreground"
                 rows={1}
                 style={{ maxHeight: '200px', boxShadow: 'none' }}

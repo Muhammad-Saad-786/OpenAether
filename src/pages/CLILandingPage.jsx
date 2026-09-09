@@ -133,7 +133,7 @@ export function CLILandingPage() {
             {/* Quick install */}
             <div className="mt-10 mx-auto max-w-2xl space-y-3 text-left">
               <CopyBlock text="npm install -g openaether" />
-              <CopyBlock text='export OPENAETHER_API_KEY="YOUR_OPENROUTER_KEY"' />
+              <CopyBlock text="Save your Groq and OpenRouter API keys" />
               <CopyBlock text="openaether" />
             </div>
 

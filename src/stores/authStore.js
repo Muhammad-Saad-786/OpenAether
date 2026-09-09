@@ -5,6 +5,7 @@ import { supabase } from '@/lib/supabase/client';
 export const useAuthStore = create((set) => ({
   user: null,
   session: null,
+  profile: null,
   loading: true,
 
   initialize: async () => {
@@ -42,6 +43,23 @@ export const useAuthStore = create((set) => ({
     return data;
   },
 
+  loadProfile: async (userId = useAuthStore.getState().user?.id) => {
+    if (!userId) return null;
+
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', userId)
+      .maybeSingle();
+    if (error) {
+      console.error('Error loading profile:', error);
+      return null;
+    }
+
+    set({ profile: data });
+    return data;
+  },
+
   register: async (email, password, username) => {
     const { data, error } = await supabase.auth.signUp({
       email,
@@ -57,7 +75,7 @@ export const useAuthStore = create((set) => ({
   logout: async () => {
     const { error } = await supabase.auth.signOut();
     if (error) throw error;
-    set({ session: null, user: null });
+    set({ session: null, user: null, profile: null });
   },
 
   // src/stores/authStore.js - Update updateProfile

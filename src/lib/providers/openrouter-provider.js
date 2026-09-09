@@ -96,4 +96,44 @@ export class OpenRouterProvider extends BaseProvider {
 
     throw lastError || new Error('All OpenRouter models failed');
   }
+
+  async streamChat(messages, options = {}, onChunk) {
+    let lastError;
+    const modelsToTry = [
+      options.model,
+      ...this.modelRotation.filter((m) => m !== options.model),
+    ].filter(Boolean);
+
+    for (const modelName of modelsToTry) {
+      try {
+        const stream = await this.client.chat.completions.create({
+          messages: messages.map((m) => ({ role: m.role, content: m.content })),
+          model: modelName,
+          max_tokens: options.maxTokens || 4000,
+          temperature: options.temperature ?? 0.5,
+          stream: true,
+        });
+
+        let fullResponse = '';
+        let finishReason = null;
+        for await (const chunk of stream) {
+          const content = chunk.choices?.[0]?.delta?.content || '';
+          finishReason = chunk.choices?.[0]?.finish_reason || finishReason;
+          if (content) {
+            fullResponse += content;
+            onChunk?.(fullResponse);
+          }
+        }
+
+        this.failedModels.delete(modelName);
+        return { content: fullResponse, model: modelName, finishReason, usage: null };
+      } catch (error) {
+        console.warn(`⚠️ OpenRouter stream ${modelName}: ${error.message}`);
+        lastError = error;
+        this.failedModels.add(modelName);
+      }
+    }
+
+    throw lastError || new Error('All OpenRouter streaming models failed');
+  }
 }

@@ -30,11 +30,7 @@ export function HomePage() {
         description="OpenAether is a free, open-source platform that unifies GPT-4o Mini, Gemma, GLM, MiniMax and more through one interface and CLI. No credit card. 30-second setup."
         keywords="OpenAether, OpenAether CLI, free AI, AI aggregator, OpenRouter alternative, GPT-4o Mini, Gemma, GLM"
         path="/"
-        structuredData={[
-          organizationSchema(),
-          softwareApplicationSchema(),
-          websiteSchema(),
-        ]}
+        structuredData={[organizationSchema(), softwareApplicationSchema(), websiteSchema()]}
       />
       <div className="flex flex-col">
         {/* Hero Section - Clear Value Proposition */}
@@ -153,6 +149,76 @@ export function HomePage() {
           </div>
         </section>
 
+        {/* Provider Coverage */}
+        <section className="py-16 sm:py-20">
+          <div className="mx-auto max-w-5xl px-6">
+            <h2 className="text-3xl font-bold text-center mb-4">
+              Choose the Right <span className="gradient-text">AI Provider</span>
+            </h2>
+            <p className="text-center text-muted-foreground mb-12">
+              OpenAether brings OpenRouter and Groq models together in one streamlined workspace.
+            </p>
+
+            <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+              <div className="rounded-2xl border bg-card p-8">
+                <div className="mb-4 flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-aether-500">OpenRouter</p>
+                    <h3 className="mt-1 text-xl font-bold">Broad model access</h3>
+                  </div>
+                  <Badge className="bg-aether-500/10 text-aether-500">Flexible</Badge>
+                </div>
+                <p className="mb-6 text-sm text-muted-foreground">
+                  Connect to a wide selection of hosted and free models through one API key, with
+                  automatic model rotation when a route is unavailable or rate limited.
+                </p>
+                <ul className="space-y-3 text-sm">
+                  <li className="flex items-start gap-2">
+                    <CheckCircle className="mt-0.5 size-4 shrink-0 text-green-500" />
+                    GPT-4o Mini, Gemma, GLM, and MiniMax models
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <CheckCircle className="mt-0.5 size-4 shrink-0 text-green-500" />
+                    Strong choice for model variety and experimentation
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <CheckCircle className="mt-0.5 size-4 shrink-0 text-green-500" />
+                    Automatic fallback across configured model routes
+                  </li>
+                </ul>
+              </div>
+
+              <div className="rounded-2xl border bg-card p-8">
+                <div className="mb-4 flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-aether-500">Groq</p>
+                    <h3 className="mt-1 text-xl font-bold">Low-latency inference</h3>
+                  </div>
+                  <Badge className="bg-green-500/10 text-green-500">Fast</Badge>
+                </div>
+                <p className="mb-6 text-sm text-muted-foreground">
+                  Use Groq&apos;s high-speed inference for responsive chat, coding, and iterative
+                  workflows where quick time-to-first-token matters.
+                </p>
+                <ul className="space-y-3 text-sm">
+                  <li className="flex items-start gap-2">
+                    <CheckCircle className="mt-0.5 size-4 shrink-0 text-green-500" />
+                    GPT-OSS 20B/120B, Qwen, Compound, and Orpheus models
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <CheckCircle className="mt-0.5 size-4 shrink-0 text-green-500" />
+                    Efficient streaming for fast responses and code generation
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <CheckCircle className="mt-0.5 size-4 shrink-0 text-green-500" />
+                    Available as a preferred route or automatic fallback
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </section>
+
         {/* Web vs CLI Comparison */}
         <section className="py-16 sm:py-20">
           <div className="mx-auto max-w-5xl px-6">
@@ -213,7 +279,7 @@ export function HomePage() {
                 </p>
                 <div className="rounded-lg bg-muted p-4 mb-6 font-mono text-sm space-y-2">
                   <div className="text-muted-foreground">$ npm install -g openaether</div>
-                  <div className="text-muted-foreground">$env:OPENAETHER_API_KEY="YOUR_API_KEY"</div>
+                  <div className="text-muted-foreground">$ Save your API key</div>
                   <div className="text-aether-500">$ openaether</div>
                 </div>
                 <ul className="space-y-2 mb-6">
@@ -254,8 +320,8 @@ export function HomePage() {
                 <div>
                   <h3 className="font-semibold text-lg">Auto-Switch on Rate Limit</h3>
                   <p className="text-muted-foreground mt-1">
-                    When one model hits its free limit, OpenAether automatically switches to another.
-                    No interruptions. No manual model selection. Just works.
+                    When one model hits its free limit, OpenAether automatically switches to
+                    another. No interruptions. No manual model selection. Just works.
                   </p>
                 </div>
               </div>
@@ -266,8 +332,8 @@ export function HomePage() {
                 <div>
                   <h3 className="font-semibold text-lg">One Key, Multiple Models</h3>
                   <p className="text-muted-foreground mt-1">
-                    GPT-4o Mini, Gemma, GLM, MiniMax — all accessible with a single OpenRouter key. No
-                    need to manage multiple accounts.
+                    GPT-4o Mini, Gemma, GLM, MiniMax — all accessible with a single OpenRouter key.
+                    No need to manage multiple accounts.
                   </p>
                 </div>
               </div>

@@ -46,7 +46,7 @@ export function Navbar() {
   const [theme, setTheme] = useState(() => localStorage.getItem('openaether-theme') || 'dark');
   const location = useLocation();
   const navigate = useNavigate();
-  const { isAuthenticated, user } = useAuth();
+  const { isAuthenticated, user, profile } = useAuth();
   const logout = useAuthStore((state) => state.logout);
 
   useEffect(() => {
@@ -131,7 +131,7 @@ export function Navbar() {
                   className="flex items-center gap-2 rounded-lg p-1 transition-colors hover:bg-accent"
                 >
                   <Avatar className="size-8">
-                    <AvatarImage src={user?.user_metadata?.avatar_url} />
+                    <AvatarImage src={profile?.avatar_url || user?.user_metadata?.avatar_url} />
                     <AvatarFallback className="bg-gradient-to-br from-aether-500 to-aether-400 text-white text-xs">
                       {user?.user_metadata?.username?.charAt(0)?.toUpperCase() || 'O'}
                     </AvatarFallback>
